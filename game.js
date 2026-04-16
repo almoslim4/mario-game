@@ -14,6 +14,7 @@
   const hudHearts = document.getElementById("hudHearts");
   const hudTime = document.getElementById("hudTime");
   const hudFlow = document.getElementById("hudFlow");
+  const hudScore = document.getElementById("hudScore");
 
   const { levels: levelDefs, sprites } = window.PIPEBOUND_LEVELS;
   const TILE = 48;
@@ -24,6 +25,46 @@
   const MAX_DT = 1 / 30;
   const SOLIDS = new Set(["#", "B", "?", "U"]);
   const HAZARDS = new Set(["^", "~"]);
+
+  const NOTE_FREQS = {
+    C2:65.41,D2:73.42,E2:82.41,F2:87.31,G2:98.00,A2:110.00,B2:123.47,
+    C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,B3:246.94,
+    C4:261.63,D4:293.66,E4:329.63,F4:349.23,G4:392.00,A4:440.00,B4:493.88,
+    C5:523.25,D5:587.33,E5:659.25,F5:698.46,G5:783.99,A5:880.00,
+    r: 0
+  };
+
+  const MUSIC_THEMES = {
+    pollen: {
+      bpm: 138,
+      melody: ["E5","r","G5","E5","C5","r","D5","B4","C5","r","E5","C5","G4","r","A4","B4"],
+      bass:   ["C3","r","G3","r","C3","r","G3","r","A3","r","E3","r","F3","r","G3","r"]
+    },
+    glow: {
+      bpm: 106,
+      melody: ["A4","r","C5","A4","E4","r","G4","F4","E4","r","C5","A4","D4","r","E4","F4"],
+      bass:   ["A2","r","E3","r","A2","r","D3","r","F2","r","C3","r","E3","r","A2","r"]
+    },
+    ember: {
+      bpm: 160,
+      melody: ["E5","G5","A5","r","B5","A5","G5","r","E5","F5","G5","r","A5","G5","F5","r"],
+      bass:   ["E2","r","B2","r","E2","r","B2","r","D3","r","A2","r","D3","r","A2","r"]
+    },
+    snow: {
+      bpm: 116,
+      melody: ["C5","E5","G5","r","E5","C5","B4","r","A4","C5","E5","r","G5","F5","E5","r"],
+      bass:   ["C3","r","G3","r","C3","r","G3","r","F3","r","C3","r","G3","r","C3","r"]
+    },
+    lava: {
+      bpm: 172,
+      melody: ["A4","C5","E5","A5","r","G5","F5","E5","D5","r","F5","A5","r","G5","E5","r"],
+      bass:   ["A2","r","E3","A2","r","G2","D3","r","A2","r","E3","A2","r","G2","D3","r"]
+    }
+  };
+
+  let _musicNextTime = 0;
+  let _musicNoteIdx = 0;
+  let _musicIntervalId = null;
 
   const atlas = new Image();
   let atlasReady = false;
@@ -111,9 +152,12 @@
           } else if (cell === "N") {
             this.powerups.push(makePickup("magnet", px + 8, py + 8));
             this.tiles[y][x] = ".";
-          } else if (cell === "b" || cell === "h" || cell === "f" || cell === "s") {
-            const kind = { b: "beetle", h: "hopper", f: "flutter", s: "spark" }[cell];
+          } else if (cell === "b" || cell === "h" || cell === "f" || cell === "s" || cell === "c") {
+            const kind = { b: "beetle", h: "hopper", f: "flutter", s: "spark", c: "chaser" }[cell];
             this.entities.push(makeEnemy(kind, px + 6, py + 8));
+            this.tiles[y][x] = ".";
+          } else if (cell === "Y") {
+            this.powerups.push(makePickup("star", px + 8, py + 8));
             this.tiles[y][x] = ".";
           } else if (cell === "M" || cell === "V") {
             this.platforms.push(makePlatform(px, py + 18, cell === "M" ? "x" : "y"));
@@ -171,7 +215,8 @@
       beetle: { w: 36, h: 26, speed: 74 },
       hopper: { w: 36, h: 36, speed: 42 },
       flutter: { w: 34, h: 30, speed: 58 },
-      spark: { w: 28, h: 28, speed: 92 }
+      spark: { w: 28, h: 28, speed: 92 },
+      chaser: { w: 34, h: 38, speed: 88 }
     }[kind];
     return {
       kind,
@@ -236,7 +281,10 @@
       magnetTimer: 0,
       invuln: 0,
       checkpoint: { x, y },
-      runFrame: 0
+      runFrame: 0,
+      wallContact: 0,
+      wallJumpCooldown: 0,
+      starTimer: 0
     };
   }
 
@@ -271,6 +319,8 @@
     initLevel(0);
     overlay.classList.add("hidden");
     state.lastTime = performance.now();
+    stopMusic();
+    startMusic();
   }
 
   function nextLevel() {
@@ -281,23 +331,35 @@
     state.mode = "playing";
     initLevel(state.levelIndex + 1);
     overlay.classList.add("hidden");
+    stopMusic();
+    startMusic();
   }
 
   function finishGame() {
     state.mode = "win";
+    stopMusic();
     const finalScore = state.score + state.coins * 25 + state.hearts * 500;
     state.score = finalScore;
     if (finalScore > state.best) {
       state.best = finalScore;
       localStorage.setItem("pipebound-best", String(finalScore));
     }
-    showOverlay("Cloudworks saved", `Final score: ${finalScore.toLocaleString()}. Best: ${state.best.toLocaleString()}. Pip earned a hot cocoa and one deeply unnecessary victory lap.`, "Play again");
+    showOverlay(
+      "Cloudworks saved!",
+      `Final score: ${finalScore.toLocaleString()}  |  Best: ${state.best.toLocaleString()}\nCoins: ${state.coins}  |  Hearts left: ${state.hearts}\nPip earned a hot cocoa and one deeply unnecessary victory lap.`,
+      "Play again"
+    );
     play("win");
   }
 
   function gameOver() {
     state.mode = "gameOver";
-    showOverlay("Run fizzled", `Score: ${state.score.toLocaleString()}. Best: ${state.best.toLocaleString()}. Pip is already tying the shoes again.`, "Retry");
+    stopMusic();
+    showOverlay(
+      "Run fizzled",
+      `Score: ${state.score.toLocaleString()}  |  Best: ${state.best.toLocaleString()}\nCoins: ${state.coins}  |  Hearts: 0\nPip is already tying the shoes again.`,
+      "Retry"
+    );
   }
 
   function showOverlay(title, text, button) {
@@ -320,7 +382,7 @@
       s: 0.8 + Math.random() * 1.5,
       v: 5 + Math.random() * 16
     }));
-    const count = state.level.theme.weather === "ember" ? 90 : 64;
+    const count = state.level.theme.weather === "ember" || state.level.theme.weather === "lava" ? 90 : 64;
     state.weather = Array.from({ length: count }, () => makeWeatherParticle());
   }
 
@@ -329,9 +391,9 @@
     return {
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      vx: weather === "ember" ? -20 + Math.random() * 34 : -8 + Math.random() * 16,
-      vy: weather === "glow" ? 16 + Math.random() * 22 : 30 + Math.random() * 70,
-      r: weather === "ember" ? 1 + Math.random() * 3 : 1 + Math.random() * 2,
+      vx: weather === "ember" ? -20 + Math.random() * 34 : weather === "snow" ? -12 + Math.random() * 24 : -8 + Math.random() * 16,
+      vy: weather === "glow" ? 16 + Math.random() * 22 : weather === "snow" ? 20 + Math.random() * 40 : 30 + Math.random() * 70,
+      r: weather === "ember" ? 1 + Math.random() * 3 : weather === "snow" ? 1.5 + Math.random() * 3 : 1 + Math.random() * 2,
       t: Math.random() * 10
     };
   }
@@ -382,6 +444,54 @@
     amp.connect(state.audio.gain);
     osc.start(now);
     osc.stop(now + duration + 0.02);
+  }
+
+  function startMusic() {
+    stopMusic();
+    if (!state.audio || state.muted) return;
+    const audioCtx = state.audio.ctx;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    _musicNextTime = audioCtx.currentTime + 0.12;
+    _musicNoteIdx = 0;
+    _musicIntervalId = setInterval(_musicSchedule, 25);
+  }
+
+  function stopMusic() {
+    if (_musicIntervalId) {
+      clearInterval(_musicIntervalId);
+      _musicIntervalId = null;
+    }
+  }
+
+  function _musicSchedule() {
+    if (!state.audio) return;
+    const audioCtx = state.audio.ctx;
+    const weather = state.level?.theme.weather || "pollen";
+    const theme = MUSIC_THEMES[weather] || MUSIC_THEMES.pollen;
+    const beatDur = 60 / theme.bpm / 2;
+    while (_musicNextTime < audioCtx.currentTime + 0.16) {
+      const idx = _musicNoteIdx % theme.melody.length;
+      _playMusicNote(NOTE_FREQS[theme.melody[idx]], beatDur * 0.8, _musicNextTime, "square", 0.14);
+      _playMusicNote(NOTE_FREQS[theme.bass[idx]], beatDur * 1.5, _musicNextTime, "triangle", 0.1);
+      _musicNextTime += beatDur;
+      _musicNoteIdx++;
+    }
+  }
+
+  function _playMusicNote(freq, duration, time, type, vol) {
+    if (!state.audio || !freq) return;
+    const audioCtx = state.audio.ctx;
+    const osc = audioCtx.createOscillator();
+    const amp = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    amp.gain.setValueAtTime(0.0001, time);
+    amp.gain.linearRampToValueAtTime(vol, time + 0.018);
+    amp.gain.linearRampToValueAtTime(0.0001, time + duration);
+    osc.connect(amp);
+    amp.connect(state.audio.gain);
+    osc.start(time);
+    osc.stop(time + duration + 0.01);
   }
 
   function update(dt) {
@@ -455,6 +565,8 @@
     if (player.magnetTimer > 0) player.magnetTimer -= dt;
     if (player.jumpBuffer > 0) player.jumpBuffer -= dt;
     if (player.coyote > 0) player.coyote -= dt;
+    if (player.wallJumpCooldown > 0) player.wallJumpCooldown -= dt;
+    if (player.starTimer > 0) player.starTimer -= dt;
     if (state.input.jumpPressed) player.jumpBuffer = 0.12;
 
     const move = Number(state.input.right) - Number(state.input.left);
@@ -504,7 +616,34 @@
 
     const wasGrounded = player.onGround;
     player.prevY = player.y;
+    player.wallContact = 0;
     moveActor(player, level, dt, true);
+
+    // Wall jump: if pressing into a wall while airborne, slow fall and allow jump off wall
+    if (!player.onGround && player.wallContact !== 0 && player.wallJumpCooldown <= 0) {
+      if (player.vy > 0) player.vy = Math.min(player.vy, 160);
+      if (player.jumpBuffer > 0) {
+        player.vy = -700;
+        player.vx = -player.wallContact * 600;
+        player.facing = -player.wallContact;
+        player.jumpBuffer = 0;
+        player.wallJumpCooldown = 0.32;
+        player.doubleReady = player.canDouble;
+        player.dashReady = player.canDash;
+        spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#b8e0ff", 14, 200);
+        play("jump");
+      }
+    }
+
+    // Dash trail particles
+    if (player.dashTimer > 0 && Math.random() < 0.5) {
+      spawnParticle(
+        player.x + player.w / 2 - player.facing * 14,
+        player.y + player.h / 2 + (Math.random() - 0.5) * 20,
+        "#ff8a47", 3 + Math.random() * 3, -player.facing * 60, 0, 0.22
+      );
+    }
+
     carryByPlatforms(player, level);
     if (player.onGround) {
       player.coyote = 0.09;
@@ -628,6 +767,19 @@
         enemy.vx += Math.cos(enemy.t * 3) * 8 * dt;
         moveActor(enemy, level, dt, false);
         if (Math.random() < 0.12) spawnParticle(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "#ffc93c", 1, -40, -120, 0.35);
+      } else if (enemy.kind === "chaser") {
+        const px = state.player.x + state.player.w / 2;
+        const ex = enemy.x + enemy.w / 2;
+        const dir = Math.sign(px - ex);
+        enemy.vx += dir * 500 * dt;
+        enemy.vx = clamp(enemy.vx, -170, 170);
+        enemy.vy += GRAVITY * dt;
+        moveActor(enemy, level, dt, false);
+        if (enemy.onGround && Math.abs(px - ex) < 320 && enemy.t > 0.7) {
+          enemy.vy = -580;
+          enemy.t = 0;
+        }
+        if (Math.random() < 0.06) spawnParticle(enemy.x + enemy.w / 2, enemy.y, "#f05d4f", 2, 0, -60, 0.3);
       } else {
         if (enemy.kind === "hopper" && enemy.onGround && enemy.t > 1.15) {
           enemy.vy = -610;
@@ -725,6 +877,14 @@
       spawnBurst(cx, cy, "#ffc93c", 24, 230);
       showToast("Magnet charm humming. Coins and gems lean toward you.", 2300);
       play("magnet");
+    } else if (item.kind === "star") {
+      state.player.starTimer = 9;
+      addScore(500);
+      addFlow(24, "STAR POWER!", cx, cy, "#ffc93c");
+      spawnBurst(cx, cy, "#ffc93c", 36, 340);
+      shake(0.14, 7);
+      showToast("Star power! Invincible — crash through anything!", 2200);
+      play("power");
     }
   }
 
@@ -750,7 +910,11 @@
           if (actor.vx > 0) actor.x = tileRect.x - actor.w;
           if (actor.vx < 0) actor.x = tileRect.x + tileRect.w;
           if (!isPlayer) actor.vx *= -1;
-          else actor.vx = 0;
+          else {
+            if (actor.vx > 0) actor.wallContact = 1;
+            else if (actor.vx < 0) actor.wallContact = -1;
+            actor.vx = 0;
+          }
         } else if (actor.vy > 0) {
           actor.y = tileRect.y - actor.h;
           actor.vy = 0;
@@ -791,6 +955,7 @@
   }
 
   function checkHazards(player, level) {
+    if (player.starTimer > 0) return;
     const left = Math.floor((player.x + 6) / TILE);
     const right = Math.floor((player.x + player.w - 7) / TILE);
     const top = Math.floor((player.y + 6) / TILE);
@@ -825,6 +990,13 @@
         addScore(300);
         addFlow(16, "DASH HIT", enemy.x + enemy.w / 2, enemy.y, "#ff8a47");
         spawnBurst(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "#ff8a47", 20, 240);
+        play("stomp");
+      } else if (player.starTimer > 0) {
+        enemy.alive = false;
+        state.combo += 1;
+        addScore(300 * state.combo);
+        addFlow(15, "STAR CRUSH", enemy.x + enemy.w / 2, enemy.y, "#ffc93c");
+        spawnBurst(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "#ffc93c", 22, 260);
         play("stomp");
       } else {
         hurtPlayer("enemy");
@@ -963,9 +1135,11 @@
 
   function updateHud() {
     hudWorld.textContent = state.level?.name || "Sundrop Fields";
+    if (hudScore) hudScore.textContent = state.score.toLocaleString();
     hudCoins.textContent = String(state.coins);
     hudGems.textContent = `${state.gems}/${state.totalGems || 0}`;
-    hudHearts.textContent = String(Math.max(0, state.hearts));
+    const h = Math.max(0, state.hearts);
+    hudHearts.textContent = "\u2665".repeat(h) + "\u2661".repeat(Math.max(0, 5 - h));
     hudTime.textContent = formatTime(state.elapsed);
     if (hudFlow) hudFlow.textContent = `x${formatMultiplier(flowMultiplier())} ${Math.round(state.flow)}`;
   }
@@ -1110,6 +1284,7 @@
     if (tile === "#") {
       if (theme.ground === "stone") drawStoneTile(x, y);
       else if (theme.ground === "foundry") drawFoundryTile(x, y);
+      else if (theme.ground === "crystal") drawCrystalTile(x, y);
       else drawSprite("grass", x, y, TILE, TILE);
     } else if (tile === "B") {
       drawSprite("brick", x, y, TILE, TILE);
@@ -1146,6 +1321,24 @@
     ctx.lineTo(x + 34, y + 8);
     ctx.lineTo(x + 28, y + 34);
     ctx.lineTo(x + 42, y + 42);
+    ctx.stroke();
+  }
+
+  function drawCrystalTile(x, y) {
+    ctx.fillStyle = "#c8eeff";
+    ctx.strokeStyle = "#181818";
+    ctx.lineWidth = 3;
+    ctx.fillRect(x + 2, y + 2, TILE - 4, TILE - 4);
+    ctx.strokeRect(x + 2, y + 2, TILE - 4, TILE - 4);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.65)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y + 6);
+    ctx.lineTo(x + 18, y + 22);
+    ctx.moveTo(x + 28, y + 8);
+    ctx.lineTo(x + 38, y + 28);
+    ctx.moveTo(x + 14, y + 32);
+    ctx.lineTo(x + 24, y + 42);
     ctx.stroke();
   }
 
@@ -1287,6 +1480,27 @@
       ctx.stroke();
       ctx.restore();
     }
+    if (player.starTimer > 0) {
+      const pulse = Math.sin(state.elapsed * 22) * 0.4 + 0.6;
+      ctx.save();
+      ctx.globalAlpha = pulse * 0.7;
+      ctx.strokeStyle = "#ffc93c";
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.ellipse(0, 4, 32 + Math.sin(state.elapsed * 18) * 5, 40, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = pulse * 0.25;
+      ctx.fillStyle = "#ffc93c";
+      ctx.fill();
+      ctx.restore();
+      if (Math.random() < 0.5) {
+        spawnParticle(
+          (Math.random() - 0.5) * 48,
+          (Math.random() - 0.5) * 54,
+          "#ffc93c", 2 + Math.random() * 3, 0, -80, 0.35
+        );
+      }
+    }
     drawSprite(sprite, -23, -27, 46, 54);
     if (player.canDash && player.dashReady) {
       ctx.globalAlpha = 0.5 + Math.sin(state.elapsed * 8) * 0.18;
@@ -1340,13 +1554,18 @@
     const weather = theme.weather;
     ctx.save();
     for (const particle of state.weather) {
-      if (weather === "ember") {
-        ctx.fillStyle = "rgba(255, 201, 60, 0.75)";
+      if (weather === "ember" || weather === "lava") {
+        ctx.fillStyle = weather === "lava" ? "rgba(255, 120, 20, 0.8)" : "rgba(255, 201, 60, 0.75)";
         ctx.fillRect(particle.x, particle.y, particle.r * 2, particle.r * 4);
       } else if (weather === "glow") {
         ctx.fillStyle = "rgba(123, 223, 242, 0.46)";
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.r * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (weather === "snow") {
+        ctx.fillStyle = "rgba(220, 240, 255, 0.78)";
+        ctx.beginPath();
+        ctx.arc(particle.x, particle.y, particle.r, 0, Math.PI * 2);
         ctx.fill();
       } else {
         ctx.fillStyle = "rgba(255, 201, 60, 0.52)";
@@ -1392,12 +1611,14 @@
       feather: "#7bdff2",
       heart: "#f05d4f",
       magnet: "#ffc93c",
+      star: "#ffc93c",
       grass: "#3bb273",
       brick: "#ff8a47",
       prize: "#ffc93c",
       used: "#b58d4a",
       spike: "#fff8ef",
-      platform: "#7bdff2"
+      platform: "#7bdff2",
+      chaser: "#f05d4f"
     };
     ctx.fillStyle = colors[name] || "#fff8ef";
     ctx.strokeStyle = "#181818";
@@ -1428,13 +1649,19 @@
     else if ((state.mode === "gameOver" || state.mode === "win") && (key === "enter" || key === " ")) startGame();
     else if (key === "p" && state.mode === "playing") {
       state.mode = "paused";
+      stopMusic();
       showOverlay("Paused", "Catch your breath. The Cloudworks can wait for a few seconds.", "Resume");
     } else if (key === "p" && state.mode === "paused") {
       state.mode = "playing";
       overlay.classList.add("hidden");
+      startMusic();
     } else if (key === "r" && state.mode === "playing") {
       initLevel(state.levelIndex);
+      stopMusic();
+      startMusic();
       showToast("World restarted.", 1000);
+    } else if (key === "m") {
+      toggleMute();
     }
   }
 
@@ -1465,6 +1692,15 @@
     }
   }
 
+  function toggleMute() {
+    state.muted = !state.muted;
+    localStorage.setItem("pipebound-muted", state.muted ? "1" : "0");
+    const btn = document.getElementById("btnMute");
+    if (btn) btn.classList.toggle("muted", state.muted);
+    if (state.muted) stopMusic();
+    else if (state.mode === "playing") startMusic();
+  }
+
   overlayButton.addEventListener("click", () => {
     ensureAudio();
     if (state.mode === "menu" || state.mode === "gameOver" || state.mode === "win") startGame();
@@ -1472,6 +1708,7 @@
     else if (state.mode === "paused") {
       state.mode = "playing";
       overlay.classList.add("hidden");
+      startMusic();
     }
   });
 
@@ -1479,6 +1716,25 @@
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
   window.addEventListener("pointerdown", ensureAudio, { once: true });
+
+  // Restore mute state
+  state.muted = localStorage.getItem("pipebound-muted") === "1";
+  const _btnMute = document.getElementById("btnMute");
+  if (_btnMute) {
+    if (state.muted) _btnMute.classList.add("muted");
+    _btnMute.addEventListener("click", toggleMute);
+  }
+
+  const _btnFullscreen = document.getElementById("btnFullscreen");
+  if (_btnFullscreen) {
+    _btnFullscreen.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch(() => {});
+      } else {
+        document.exitFullscreen?.();
+      }
+    });
+  }
 
   setupTouchControls();
   resize();

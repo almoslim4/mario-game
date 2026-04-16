@@ -16,6 +16,10 @@
           <strong id="hudWorld">Sundrop Fields</strong>
         </div>
         <div>
+          <span class="hud-label">Score</span>
+          <strong id="hudScore">0</strong>
+        </div>
+        <div>
           <span class="hud-label">Coins</span>
           <strong id="hudCoins">0</strong>
         </div>
@@ -25,7 +29,7 @@
         </div>
         <div>
           <span class="hud-label">Hearts</span>
-          <strong id="hudHearts">3</strong>
+          <strong id="hudHearts">&#9829;&#9829;&#9829;</strong>
         </div>
         <div>
           <span class="hud-label">Time</span>
@@ -36,6 +40,11 @@
           <strong id="hudFlow">x1 0</strong>
         </div>
       </section>
+
+      <div class="settings-bar">
+        <button id="btnMute" type="button" aria-label="Toggle sound" title="Toggle sound">&#9835;</button>
+        <button id="btnFullscreen" type="button" aria-label="Toggle fullscreen" title="Fullscreen">&#x26F6;</button>
+      </div>
 
       <p id="toast" class="toast" role="status"></p>
 
@@ -51,15 +60,17 @@
             <span>A/D or arrows: move</span>
             <span>W/Up/Space: jump</span>
             <span>Shift/K: dash</span>
+            <span>Wall: jump at wall + jump key</span>
             <span>P: pause, R: restart</span>
+            <span>M: mute music</span>
           </div>
           <button id="overlayButton" type="button">Start run</button>
         </div>
       </section>
 
       <nav class="touch-controls" aria-label="Touch controls">
-        <button type="button" data-touch="left" aria-label="Move left">Left</button>
-        <button type="button" data-touch="right" aria-label="Move right">Right</button>
+        <button type="button" data-touch="left" aria-label="Move left">&#9664;</button>
+        <button type="button" data-touch="right" aria-label="Move right">&#9654;</button>
         <button type="button" data-touch="jump" aria-label="Jump">Jump</button>
         <button type="button" data-touch="dash" aria-label="Dash">Dash</button>
       </nav>

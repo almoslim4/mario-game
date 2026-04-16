@@ -52,11 +52,42 @@ button {
   position: absolute;
   top: 14px;
   left: 14px;
-  right: 14px;
+  right: 120px;
   display: grid;
-  grid-template-columns: minmax(130px, 1.4fr) repeat(5, minmax(72px, 0.6fr));
+  grid-template-columns: minmax(130px, 1.4fr) repeat(6, minmax(72px, 0.6fr));
   gap: 8px;
   pointer-events: none;
+}
+
+.settings-bar {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-bar button {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: rgba(255, 248, 239, 0.92);
+  box-shadow: 0 4px 0 var(--shadow);
+  font-size: 20px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.settings-bar button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--shadow);
+}
+
+.settings-bar button.muted {
+  opacity: 0.45;
 }
 
 .hud > div {
@@ -218,7 +249,14 @@ h1 {
     top: 8px;
     left: 8px;
     right: 8px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .settings-bar {
+    top: auto;
+    bottom: 84px;
+    right: 14px;
+    flex-direction: row;
   }
 
   .hud > div {
@@ -250,7 +288,7 @@ h1 {
   }
 
   .keys {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .touch-controls {
