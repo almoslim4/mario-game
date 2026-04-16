@@ -56,6 +56,7 @@
     shakePower: 0,
     audio: null,
     muted: false,
+    supportTipShown: false,
     toastTimer: 0,
     particles: [],
     floaters: [],
@@ -766,6 +767,11 @@
 
   function bumpBlock(tx, ty) {
     const tile = state.level.tile(tx, ty);
+    if (state.level.tile(tx, ty - 1) === "?") {
+      openPrizeBlock(tx, ty - 1, "support");
+      spawnBurst(tx * TILE + TILE / 2, ty * TILE + 12, "#fff8ef", 8, 90);
+      return;
+    }
     if (tile !== "?" && tile !== "B") return;
     const px = tx * TILE + TILE / 2;
     const py = ty * TILE;
@@ -773,20 +779,34 @@
     shake(0.08, 4);
     spawnBurst(px, py + 8, tile === "?" ? "#ffc93c" : "#ff8a47", 12, 110);
     if (tile === "?") {
-      state.level.setTile(tx, ty, "U");
-      const roll = (tx * 7 + ty * 11 + state.levelIndex) % 5;
-      if (roll === 0) state.level.powerups.push(makePickup("heart", tx * TILE + 8, ty * TILE - 32));
-      else if (roll === 1 && !state.player.canDash) state.level.powerups.push(makePickup("dash", tx * TILE + 8, ty * TILE - 32));
-      else if (roll === 2 && !state.player.canDouble) state.level.powerups.push(makePickup("feather", tx * TILE + 8, ty * TILE - 32));
-      else {
-        const coin = makePickup("coin", tx * TILE + 12, ty * TILE - 30);
-        coin.vy = -290;
-        state.level.coins.push(coin);
-      }
+      openPrizeBlock(tx, ty);
     } else if (tile === "B" && Math.abs(state.player.vx) > 520) {
       state.level.setTile(tx, ty, ".");
       addScore(50);
       addFlow(4, "BRICK BREAK", px, py, "#ff8a47");
+    }
+  }
+
+  function openPrizeBlock(tx, ty, source = "direct") {
+    if (state.level.tile(tx, ty) !== "?") return;
+    const px = tx * TILE + TILE / 2;
+    const py = ty * TILE;
+    play("block");
+    shake(0.08, 4);
+    spawnBurst(px, py + 8, "#ffc93c", 14, 125);
+    state.level.setTile(tx, ty, "U");
+    const roll = (tx * 7 + ty * 11 + state.levelIndex) % 5;
+    if (roll === 0) state.level.powerups.push(makePickup("heart", tx * TILE + 8, ty * TILE - 32));
+    else if (roll === 1 && !state.player.canDash) state.level.powerups.push(makePickup("dash", tx * TILE + 8, ty * TILE - 32));
+    else if (roll === 2 && !state.player.canDouble) state.level.powerups.push(makePickup("feather", tx * TILE + 8, ty * TILE - 32));
+    else {
+      const coin = makePickup("coin", tx * TILE + 12, ty * TILE - 30);
+      coin.vy = -290;
+      state.level.coins.push(coin);
+    }
+    if (source === "support" && !state.supportTipShown) {
+      state.supportTipShown = true;
+      showToast("Good hit. Support blocks can pop the prize block above.", 1700);
     }
   }
 

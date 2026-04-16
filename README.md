@@ -10,6 +10,10 @@ An original browser platformer inspired by classic jump-and-stomp games. Open `i
 - Pause: `P`
 - Restart current world: `R`
 
+## Prize Blocks
+
+Jump into a `?` block from below to open it. If bricks or terrain sit directly under a `?` block, bump that support block from below and the prize above will pop open too.
+
 ## Goal
 
 Collect coins, sky gems, powerups, and hearts while crossing three handmade worlds. Chain stomps, bounce pads, dash rings, and risky aerial routes to raise Flow for bigger scoring. Magnet charms pull coins and gems toward you for a short burst, and checkpoint flags make harder routes worth trying.
