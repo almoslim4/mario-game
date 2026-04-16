@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="192" viewBox="0 0 512 192">
+  <defs>
+    <style>
+      .line{stroke:#181818;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+      .soft{stroke:#181818;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
+    </style>
+  </defs>
+  <rect width="512" height="192" fill="none"/>
+
+  <g id="pip-idle" transform="translate(0 0)">
+    <path class="line" fill="#f05d4f" d="M7 13h18v7H7z"/>
+    <path class="line" fill="#ffc93c" d="M9 6h14l5 7H4z"/>
+    <path class="line" fill="#fff8ef" d="M10 12h12v9H10z"/>
+    <path fill="#181818" d="M15 15h3v3h-3z"/>
+    <path class="line" fill="#3bb273" d="M8 20h16v8H8z"/>
+    <path class="soft" fill="#7bdff2" d="M23 19l6 3-6 3z"/>
+    <path class="line" fill="#26313a" d="M8 28h7v3H8zM18 28h7v3h-7z"/>
+  </g>
+
+  <g id="pip-run-a" transform="translate(32 0)">
+    <path class="line" fill="#f05d4f" d="M7 13h18v7H7z"/>
+    <path class="line" fill="#ffc93c" d="M10 5h13l5 7H4z"/>
+    <path class="line" fill="#fff8ef" d="M10 12h12v9H10z"/>
+    <path fill="#181818" d="M16 15h3v3h-3z"/>
+    <path class="line" fill="#3bb273" d="M8 20h16v8H8z"/>
+    <path class="soft" fill="#7bdff2" d="M23 19l6 2-6 4z"/>
+    <path class="line" fill="#26313a" d="M4 28h9v3H4zM19 26h7v3h-7z"/>
+  </g>
+
+  <g id="pip-run-b" transform="translate(64 0)">
+    <path class="line" fill="#f05d4f" d="M7 13h18v7H7z"/>
+    <path class="line" fill="#ffc93c" d="M9 6h14l5 7H4z"/>
+    <path class="line" fill="#fff8ef" d="M10 12h12v9H10z"/>
+    <path fill="#181818" d="M15 15h3v3h-3z"/>
+    <path class="line" fill="#3bb273" d="M8 20h16v8H8z"/>
+    <path class="soft" fill="#7bdff2" d="M23 20l6 3-6 3z"/>
+    <path class="line" fill="#26313a" d="M7 26h7v3H7zM18 28h10v3H18z"/>
+  </g>
+
+  <g id="pip-jump" transform="translate(96 0)">
+    <path class="line" fill="#f05d4f" d="M7 13h18v7H7z"/>
+    <path class="line" fill="#ffc93c" d="M9 5h14l5 7H4z"/>
+    <path class="line" fill="#fff8ef" d="M10 12h12v9H10z"/>
+    <path fill="#181818" d="M16 14h3v3h-3z"/>
+    <path class="line" fill="#3bb273" d="M8 20h16v8H8z"/>
+    <path class="soft" fill="#7bdff2" d="M24 18l6 3-6 4z"/>
+    <path class="line" fill="#26313a" d="M5 26h7v3H5zM20 26h7v3h-7z"/>
+  </g>
+
+  <g id="pip-dash" transform="translate(128 0)">
+    <path class="line" fill="#f05d4f" d="M9 13h17v7H9z"/>
+    <path class="line" fill="#ffc93c" d="M11 6h13l5 7H6z"/>
+    <path class="line" fill="#fff8ef" d="M12 12h12v9H12z"/>
+    <path fill="#181818" d="M18 15h3v3h-3z"/>
+    <path class="line" fill="#3bb273" d="M10 20h16v8H10z"/>
+    <path class="line" fill="#ff8a47" d="M2 19l10 3-10 4 3-4z"/>
+    <path class="line" fill="#26313a" d="M9 28h7v3H9zM20 28h8v3h-8z"/>
+  </g>
+
+  <g id="beetle" transform="translate(0 32)">
+    <ellipse class="line" cx="16" cy="21" rx="12" ry="8" fill="#46b06f"/>
+    <path class="soft" fill="#2f8f57" d="M5 21h22M16 13v15"/>
+    <circle class="line" cx="8" cy="18" r="3" fill="#fff8ef"/>
+    <circle class="line" cx="24" cy="18" r="3" fill="#fff8ef"/>
+    <path fill="#181818" d="M8 18h2v2H8zM23 18h2v2h-2z"/>
+    <path class="soft" fill="none" d="M7 28l-4 3M25 28l4 3"/>
+  </g>
+
+  <g id="hopper" transform="translate(32 32)">
+    <path class="line" fill="#ff8a47" d="M6 26c0-9 4-15 10-15s10 6 10 15z"/>
+    <path class="soft" fill="#ffc93c" d="M11 13l5-8 5 8z"/>
+    <circle class="line" cx="12" cy="20" r="3" fill="#fff8ef"/>
+    <circle class="line" cx="21" cy="20" r="3" fill="#fff8ef"/>
+    <path fill="#181818" d="M12 20h2v2h-2zM20 20h2v2h-2z"/>
+    <path class="line" fill="#26313a" d="M5 27h9v3H5zM18 27h9v3h-9z"/>
+  </g>
+
+  <g id="flutter" transform="translate(64 32)">
+    <path class="line" fill="#7bdff2" d="M15 12c-4-7-12-7-13 1 4-1 8 2 11 6z"/>
+    <path class="line" fill="#7bdff2" d="M17 12c4-7 12-7 13 1-4-1-8 2-11 6z"/>
+    <circle class="line" cx="16" cy="20" r="7" fill="#f05d4f"/>
+    <path fill="#181818" d="M13 18h2v2h-2zM18 18h2v2h-2z"/>
+    <path class="soft" fill="none" d="M13 24c2 2 4 2 6 0"/>
+  </g>
+
+  <g id="spark" transform="translate(96 32)">
+    <path class="line" fill="#ffc93c" d="M16 3l4 10 10-2-8 7 5 10-11-5-10 5 4-10-8-7 10 2z"/>
+    <circle cx="16" cy="16" r="4" fill="#fff8ef"/>
+  </g>
+
+  <g id="coin" transform="translate(0 64)">
+    <ellipse class="line" cx="16" cy="16" rx="9" ry="13" fill="#ffc93c"/>
+    <ellipse class="soft" cx="16" cy="16" rx="4" ry="9" fill="#ffe98a"/>
+  </g>
+
+  <g id="gem" transform="translate(32 64)">
+    <path class="line" fill="#7bdff2" d="M16 4l11 8-11 17L5 12z"/>
+    <path class="soft" fill="#e9fff5" d="M5 12h22M12 12l4 17 4-17M11 5l5 7 5-7"/>
+  </g>
+
+  <g id="dash-pepper" transform="translate(64 64)">
+    <path class="line" fill="#f05d4f" d="M9 9c9-6 18 3 11 15-4 7-14 4-13-5 0-4 1-7 2-10z"/>
+    <path class="soft" fill="#3bb273" d="M15 8c2-4 7-4 10-1-4 1-6 2-8 5z"/>
+    <path class="soft" fill="#ffc93c" d="M12 22c3 2 6 1 8-2"/>
+  </g>
+
+  <g id="feather" transform="translate(96 64)">
+    <path class="line" fill="#7bdff2" d="M24 5C11 7 6 16 7 28c9-2 17-10 17-23z"/>
+    <path class="soft" fill="none" d="M9 26L24 5M12 19l-5-2M15 15l-5-3M18 11l-4-3"/>
+  </g>
+
+  <g id="heart" transform="translate(128 64)">
+    <path class="line" fill="#f05d4f" d="M16 28C6 20 3 16 5 10c2-6 9-5 11 0 2-5 9-6 11 0 2 6-1 10-11 18z"/>
+    <path fill="#fff8ef" d="M10 9c-2 1-3 4-2 6 1-3 3-5 6-5-1-1-2-1-4-1z"/>
+  </g>
+
+  <g id="magnet" transform="translate(160 64)">
+    <path class="line" fill="#ffc93c" d="M7 9h7v10c0 5 4 7 8 4 2-2 3-4 3-7V9h-7v8c0 2-1 4-3 4s-3-2-3-4V9H7z"/>
+    <path class="line" fill="#f05d4f" d="M7 7h7v6H7zM18 7h7v6h-7z"/>
+    <path class="soft" fill="none" d="M4 18c-2-6 0-11 4-14M28 18c2-6 0-11-4-14"/>
+    <circle cx="16" cy="25" r="2" fill="#fff8ef"/>
+  </g>
+
+  <g id="grass-tile" transform="translate(0 96)">
+    <rect class="line" x="2" y="6" width="28" height="24" fill="#8fd14f"/>
+    <path class="line" fill="#3bb273" d="M2 6h28v8H2z"/>
+    <path class="soft" fill="#e9fff5" d="M4 6l3-4 3 4 3-4 3 4 3-4 3 4 3-4 3 4z"/>
+    <path class="soft" fill="none" d="M6 19h8M18 24h7"/>
+  </g>
+
+  <g id="brick" transform="translate(32 96)">
+    <rect class="line" x="2" y="4" width="28" height="26" fill="#ff8a47"/>
+    <path class="soft" fill="none" d="M2 13h28M2 22h28M12 4v9M22 13v9M10 22v8"/>
+  </g>
+
+  <g id="prize" transform="translate(64 96)">
+    <rect class="line" x="3" y="3" width="26" height="26" rx="4" fill="#ffc93c"/>
+    <path class="soft" fill="#fff8ef" d="M13 10c2-5 10-3 8 3-1 3-5 3-5 7"/>
+    <circle cx="16" cy="25" r="2" fill="#181818"/>
+  </g>
+
+  <g id="used" transform="translate(96 96)">
+    <rect class="line" x="3" y="3" width="26" height="26" rx="4" fill="#b58d4a"/>
+    <path class="soft" fill="none" d="M8 9h16M8 16h16M8 23h16"/>
+  </g>
+
+  <g id="spike" transform="translate(128 96)">
+    <path class="line" fill="#fff8ef" d="M4 29l6-20 6 20 6-20 6 20z"/>
+    <path class="soft" fill="none" d="M4 29h24"/>
+  </g>
+
+  <g id="platform" transform="translate(160 96)">
+    <rect class="line" x="2" y="12" width="28" height="10" rx="3" fill="#7bdff2"/>
+    <path class="soft" fill="#e9fff5" d="M4 12h24v4H4z"/>
+    <path class="soft" fill="none" d="M7 23v5M25 23v5"/>
+  </g>
+
+  <g id="flag" transform="translate(0 128)">
+    <path class="line" fill="#26313a" d="M8 4h4v27H8z"/>
+    <path class="line" fill="#f05d4f" d="M12 5h16l-4 7 4 7H12z"/>
+    <path class="soft" fill="#ffc93c" d="M15 9h6"/>
+  </g>
+
+  <g id="gate" transform="translate(32 128)">
+    <path class="line" fill="#26313a" d="M6 29V11C6 5 26 5 26 11v18z"/>
+    <path class="line" fill="#7bdff2" d="M11 29V13c0-5 10-5 10 0v16z"/>
+    <circle cx="16" cy="18" r="3" fill="#fff8ef"/>
+  </g>
+
+  <g id="checkpoint" transform="translate(64 128)">
+    <path class="line" fill="#26313a" d="M8 4h4v27H8z"/>
+    <path class="line" fill="#3bb273" d="M12 5h14l-3 6 3 6H12z"/>
+    <circle class="soft" cx="10" cy="4" r="3" fill="#ffc93c"/>
+  </g>
+
+  <g id="flower" transform="translate(96 128)">
+    <path class="soft" fill="#3bb273" d="M16 30V17M16 24c-4-6-9-6-11-2 5 0 8 2 11 6M16 25c4-6 9-6 11-2-5 0-8 2-11 6"/>
+    <circle class="line" cx="16" cy="13" r="5" fill="#ffc93c"/>
+    <circle class="soft" cx="16" cy="13" r="2" fill="#f05d4f"/>
+  </g>
+</svg>

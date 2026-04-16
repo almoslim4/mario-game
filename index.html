@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pipebound Panic</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main class="game-shell" aria-label="Pipebound Panic game">
+      <canvas id="gameCanvas" aria-label="Pipebound Panic"></canvas>
+
+      <section class="hud" aria-live="polite">
+        <div>
+          <span class="hud-label">World</span>
+          <strong id="hudWorld">Sundrop Fields</strong>
+        </div>
+        <div>
+          <span class="hud-label">Coins</span>
+          <strong id="hudCoins">0</strong>
+        </div>
+        <div>
+          <span class="hud-label">Gems</span>
+          <strong id="hudGems">0/3</strong>
+        </div>
+        <div>
+          <span class="hud-label">Hearts</span>
+          <strong id="hudHearts">3</strong>
+        </div>
+        <div>
+          <span class="hud-label">Time</span>
+          <strong id="hudTime">0:00</strong>
+        </div>
+        <div>
+          <span class="hud-label">Flow</span>
+          <strong id="hudFlow">x1 0</strong>
+        </div>
+      </section>
+
+      <p id="toast" class="toast" role="status"></p>
+
+      <section id="overlay" class="overlay">
+        <div class="panel">
+          <p class="eyebrow">Pipebound Panic</p>
+          <h1 id="overlayTitle">Pip and the Cloudworks</h1>
+          <p id="overlayText">
+            Sprint through bright worlds, stomp cranky critters, crack prize blocks,
+            grab sky gems, chain boost rings, and reach the launch gate before the Cloudworks overheat.
+          </p>
+          <div class="keys">
+            <span>A/D or arrows: move</span>
+            <span>W/Up/Space: jump</span>
+            <span>Shift/K: dash</span>
+            <span>P: pause, R: restart</span>
+          </div>
+          <button id="overlayButton" type="button">Start run</button>
+        </div>
+      </section>
+
+      <nav class="touch-controls" aria-label="Touch controls">
+        <button type="button" data-touch="left" aria-label="Move left">Left</button>
+        <button type="button" data-touch="right" aria-label="Move right">Right</button>
+        <button type="button" data-touch="jump" aria-label="Jump">Jump</button>
+        <button type="button" data-touch="dash" aria-label="Dash">Dash</button>
+      </nav>
+    </main>
+
+    <script src="levels.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>

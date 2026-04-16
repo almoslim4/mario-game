@@ -1,0 +1,273 @@
+:root {
+  color-scheme: light;
+  --ink: #181818;
+  --paper: #fff8ef;
+  --coral: #f05d4f;
+  --gold: #ffc93c;
+  --green: #3bb273;
+  --mint: #7bdff2;
+  --sky: #5fc9ff;
+  --night: #26313a;
+  --shadow: rgba(0, 0, 0, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #5fc9ff;
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+}
+
+button {
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.game-shell {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  min-height: 420px;
+  overflow: hidden;
+  background: #5fc9ff;
+}
+
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  cursor: crosshair;
+}
+
+.hud {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: grid;
+  grid-template-columns: minmax(130px, 1.4fr) repeat(5, minmax(72px, 0.6fr));
+  gap: 8px;
+  pointer-events: none;
+}
+
+.hud > div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: rgba(255, 248, 239, 0.9);
+  box-shadow: 0 5px 0 var(--shadow);
+}
+
+.hud-label {
+  display: block;
+  color: #5b5245;
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.hud strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.toast {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  width: min(520px, calc(100vw - 32px));
+  min-height: 42px;
+  margin: 0;
+  padding: 10px 14px;
+  transform: translateX(-50%) translateY(-18px);
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: rgba(255, 201, 60, 0.94);
+  box-shadow: 0 5px 0 var(--shadow);
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: linear-gradient(180deg, rgba(95, 201, 255, 0.76), rgba(123, 223, 242, 0.5));
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.panel {
+  width: min(720px, 100%);
+  padding: 24px;
+  border: 4px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 10px 0 var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--coral);
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 10px;
+  font-size: 40px;
+  line-height: 1;
+}
+
+#overlayText {
+  margin: 0 0 16px;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.keys span {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #e9fff5;
+  font-weight: 700;
+}
+
+#overlayButton,
+.touch-controls button {
+  border: 3px solid var(--ink);
+  border-radius: 8px;
+  background: var(--green);
+  color: #0e1d12;
+  box-shadow: 0 5px 0 var(--shadow);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+#overlayButton {
+  width: 100%;
+  min-height: 50px;
+  padding: 10px 16px;
+  font-size: 18px;
+}
+
+#overlayButton:active,
+.touch-controls button:active,
+.touch-controls button.active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--shadow);
+}
+
+.touch-controls {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  display: none;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.touch-controls button {
+  min-height: 54px;
+  padding: 8px;
+  background: rgba(255, 248, 239, 0.92);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+@media (max-width: 760px), (pointer: coarse) {
+  .hud {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hud > div {
+    padding: 6px 7px;
+  }
+
+  .hud strong {
+    font-size: 15px;
+  }
+
+  .hud-label {
+    font-size: 11px;
+  }
+
+  .toast {
+    top: 126px;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  h1 {
+    font-size: 30px;
+  }
+
+  #overlayText {
+    font-size: 16px;
+  }
+
+  .keys {
+    grid-template-columns: 1fr;
+  }
+
+  .touch-controls {
+    display: grid;
+  }
+}
+
+@media (max-height: 520px) {
+  .hud {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .touch-controls button {
+    min-height: 44px;
+  }
+
+  .panel {
+    padding: 14px;
+  }
+}
