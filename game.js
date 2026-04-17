@@ -30,6 +30,40 @@
   const SOLIDS = new Set(["#", "B", "?", "U"]);
   const HAZARDS = new Set(["^", "~"]);
 
+  const SAVE_KEY = "pipebound-save-v2";
+  const loadSave = () => {
+    try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; }
+  };
+  const writeSave = (data) => {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); } catch (e) {}
+  };
+  const save = Object.assign({
+    levels: {},
+    unlocked: 1,
+    achievements: {},
+    totalCoins: 0,
+    totalRuns: 0
+  }, loadSave());
+  const persist = () => writeSave(save);
+
+  const ACHIEVEMENTS = [
+    { id: "first_coin", name: "First Shiny", desc: "Collect your first coin." },
+    { id: "hundred_coins", name: "Pocket Jangle", desc: "Collect 100 lifetime coins." },
+    { id: "five_hundred_coins", name: "Treasure Hoarder", desc: "Collect 500 lifetime coins." },
+    { id: "first_gem", name: "Sky Touched", desc: "Snag a sky gem." },
+    { id: "all_gems", name: "Gemkeeper", desc: "Collect every sky gem in a single world." },
+    { id: "flow_max", name: "In the Zone", desc: "Hit 3x Flow." },
+    { id: "combo5", name: "Chainbreaker", desc: "Stomp 5 enemies without touching the ground." },
+    { id: "fireball_kill", name: "Pyro", desc: "Scorch an enemy with a fireball." },
+    { id: "shield_save", name: "Bubble Wrapped", desc: "Block a hit with the shield." },
+    { id: "boss_slain", name: "Core Breaker", desc: "Defeat the Core Dragon." },
+    { id: "finish_run", name: "Cloud Savior", desc: "Finish every world in one run." },
+    { id: "no_hit_level", name: "Untouchable", desc: "Clear any world without taking damage." },
+    { id: "speedrun", name: "Blazing Boots", desc: "Clear a world in under 45 seconds." },
+    { id: "wall_master", name: "Wall Wizard", desc: "Perform 10 wall-jumps." }
+  ];
+  const achievementIndex = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
+
   const NOTE_FREQS = {
     C2:65.41,D2:73.42,E2:82.41,F2:87.31,G2:98.00,A2:110.00,B2:123.47,
     C3:130.81,D3:146.83,E3:164.81,F3:174.61,G3:196.00,A3:220.00,B3:246.94,
@@ -39,30 +73,41 @@
   };
 
   const MUSIC_THEMES = {
+    boss: {
+      bpm: 178,
+      melody: ["E5","D5","C5","B4","A4","B4","C5","D5","E5","G5","A5","G5","E5","D5","C5","B4"],
+      bass:   ["E2","E2","A2","A2","D2","D2","G2","G2","E2","E2","A2","A2","B2","B2","E3","E3"],
+      drums:  [1,0,1,0,1,0,1,1,1,0,1,0,1,1,0,1]
+    },
     pollen: {
       bpm: 138,
       melody: ["E5","r","G5","E5","C5","r","D5","B4","C5","r","E5","C5","G4","r","A4","B4"],
-      bass:   ["C3","r","G3","r","C3","r","G3","r","A3","r","E3","r","F3","r","G3","r"]
+      bass:   ["C3","r","G3","r","C3","r","G3","r","A3","r","E3","r","F3","r","G3","r"],
+      drums:  [1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0]
     },
     glow: {
       bpm: 106,
       melody: ["A4","r","C5","A4","E4","r","G4","F4","E4","r","C5","A4","D4","r","E4","F4"],
-      bass:   ["A2","r","E3","r","A2","r","D3","r","F2","r","C3","r","E3","r","A2","r"]
+      bass:   ["A2","r","E3","r","A2","r","D3","r","F2","r","C3","r","E3","r","A2","r"],
+      drums:  [1,0,0,1,0,0,1,0,1,0,0,0,1,0,1,0]
     },
     ember: {
       bpm: 160,
       melody: ["E5","G5","A5","r","B5","A5","G5","r","E5","F5","G5","r","A5","G5","F5","r"],
-      bass:   ["E2","r","B2","r","E2","r","B2","r","D3","r","A2","r","D3","r","A2","r"]
+      bass:   ["E2","r","B2","r","E2","r","B2","r","D3","r","A2","r","D3","r","A2","r"],
+      drums:  [1,1,0,1,1,0,1,0,1,1,0,1,1,0,1,0]
     },
     snow: {
       bpm: 116,
       melody: ["C5","E5","G5","r","E5","C5","B4","r","A4","C5","E5","r","G5","F5","E5","r"],
-      bass:   ["C3","r","G3","r","C3","r","G3","r","F3","r","C3","r","G3","r","C3","r"]
+      bass:   ["C3","r","G3","r","C3","r","G3","r","F3","r","C3","r","G3","r","C3","r"],
+      drums:  [1,0,0,1,0,0,1,0,1,0,0,0,1,0,1,0]
     },
     lava: {
       bpm: 172,
       melody: ["A4","C5","E5","A5","r","G5","F5","E5","D5","r","F5","A5","r","G5","E5","r"],
-      bass:   ["A2","r","E3","A2","r","G2","D3","r","A2","r","E3","A2","r","G2","D3","r"]
+      bass:   ["A2","r","E3","A2","r","G2","D3","r","A2","r","E3","A2","r","G2","D3","r"],
+      drums:  [1,1,1,0,1,1,0,1,1,1,1,0,1,1,0,1]
     }
   };
 
@@ -108,7 +153,22 @@
     particles: [],
     floaters: [],
     clouds: [],
-    weather: []
+    weather: [],
+    fireballs: [],
+    enemyProjectiles: [],
+    hitThisLevel: false,
+    comboChain: 0,
+    comboTimer: 0,
+    coinChain: 0,
+    coinChainTimer: 0,
+    lives: 3,
+    wallJumpTotal: 0,
+    achievementToasts: [],
+    slowMo: 0,
+    transition: 0,
+    pendingTransition: null,
+    flash: 0,
+    totalCoinsLifetime: save.totalCoins || 0
   };
 
   class Level {
@@ -129,6 +189,9 @@
       this.gate = { x: 0, y: 0, w: 42, h: 60 };
       this.spawn = { x: TILE * 2, y: TILE * 4 };
       this.time = 0;
+      this.turrets = [];
+      this.boss = null;
+      this.isBossArena = !!def.isBossArena;
       this.parse();
     }
 
@@ -165,6 +228,18 @@
             this.tiles[y][x] = ".";
           } else if (cell === "Y") {
             this.powerups.push(makePickup("star", px + 8, py + 8));
+            this.tiles[y][x] = ".";
+          } else if (cell === "W") {
+            this.powerups.push(makePickup("fireflower", px + 8, py + 8));
+            this.tiles[y][x] = ".";
+          } else if (cell === "X") {
+            this.powerups.push(makePickup("shield", px + 8, py + 8));
+            this.tiles[y][x] = ".";
+          } else if (cell === "q") {
+            this.turrets.push(makeTurret(px + TILE / 2 - 18, py + TILE / 2 - 14));
+            this.tiles[y][x] = ".";
+          } else if (cell === "Z") {
+            this.boss = makeBoss(px, py - TILE);
             this.tiles[y][x] = ".";
           } else if (cell === "M" || cell === "V") {
             this.platforms.push(makePlatform(px, py + 18, cell === "M" ? "x" : "y"));
@@ -266,6 +341,50 @@
     return { x, y, w: 38, h: 46, active: false, pulse: Math.random() * 4 };
   }
 
+  function makeTurret(x, y) {
+    return { x, y, w: 36, h: 30, cooldown: 1 + Math.random() * 2, pulse: 0, alive: true, hp: 2 };
+  }
+
+  function makeBoss(x, y) {
+    return {
+      x, y, w: 96, h: 84,
+      baseY: y,
+      vx: 0, vy: 0,
+      hp: 6, maxHp: 6,
+      phase: "intro",
+      phaseTime: 0,
+      attackTimer: 2.6,
+      facing: -1,
+      hurtFlash: 0,
+      alive: true,
+      onGround: false,
+      shakeOffset: 0
+    };
+  }
+
+  function makeFireball(x, y, dir) {
+    return {
+      x, y, w: 18, h: 18,
+      vx: dir * 620,
+      vy: -80,
+      life: 2.4,
+      bounces: 2,
+      alive: true,
+      t: 0
+    };
+  }
+
+  function makeEnemyBullet(x, y, vx, vy, kind) {
+    return {
+      x, y, w: 16, h: 16,
+      vx, vy,
+      life: 3.5,
+      alive: true,
+      kind: kind || "bolt",
+      t: 0
+    };
+  }
+
   function makePlayer(x, y) {
     return {
       x,
@@ -291,7 +410,11 @@
       runFrame: 0,
       wallContact: 0,
       wallJumpCooldown: 0,
-      starTimer: 0
+      starTimer: 0,
+      hasFire: false,
+      fireCooldown: 0,
+      hasShield: false,
+      shieldPulse: 0
     };
   }
 
@@ -310,21 +433,34 @@
     state.particles.length = 0;
     state.floaters.length = 0;
     state.weather.length = 0;
+    state.fireballs.length = 0;
+    state.enemyProjectiles.length = 0;
+    state.hitThisLevel = false;
+    state.comboChain = 0;
+    state.comboTimer = 0;
+    state.coinChain = 0;
+    state.coinChainTimer = 0;
     state.shake = 0;
     state.shakePower = 0;
+    state.slowMo = 0;
     buildAtmosphere();
     updateHud();
     if (state.mode === "playing") showToast(state.level.def.tip, 4200);
   }
 
-  function startGame() {
+  function startGame(fromIndex) {
     ensureAudio();
     state.mode = "playing";
     state.coins = 0;
     state.score = 0;
+    state.lives = 3;
+    state.wallJumpTotal = 0;
     state.hearts = state.assistMode ? 5 : 3;
-    initLevel(0);
+    save.totalRuns = (save.totalRuns || 0) + 1;
+    persist();
+    initLevel(typeof fromIndex === "number" ? fromIndex : 0);
     overlay.classList.add("hidden");
+    state.transition = 0.6;
     state.lastTime = performance.now();
     stopMusic();
     startMusic();
@@ -336,6 +472,7 @@
       return;
     }
     state.mode = "playing";
+    state.transition = 0.7;
     initLevel(state.levelIndex + 1);
     overlay.classList.add("hidden");
     stopMusic();
@@ -345,15 +482,18 @@
   function finishGame() {
     state.mode = "win";
     stopMusic();
-    const finalScore = state.score + state.coins * 25 + state.hearts * 500;
+    const finalScore = state.score + state.coins * 25 + state.hearts * 500 + state.lives * 1000;
     state.score = finalScore;
     if (finalScore > state.best) {
       state.best = finalScore;
       localStorage.setItem("pipebound-best", String(finalScore));
     }
+    unlockAchievement("finish_run");
+    save.unlocked = Math.max(save.unlocked, levelDefs.length);
+    persist();
     showOverlay(
       "Cloudworks saved!",
-      `Final score: ${finalScore.toLocaleString()}  |  Best: ${state.best.toLocaleString()}\nCoins: ${state.coins}  |  Hearts left: ${state.hearts}\nPip earned a hot cocoa and one deeply unnecessary victory lap.`,
+      `Final score: ${finalScore.toLocaleString()}  |  Best: ${state.best.toLocaleString()}\nCoins: ${state.coins}  |  Hearts left: ${state.hearts}  |  Lives: ${state.lives}\nPip earned a hot cocoa and one deeply unnecessary victory lap.`,
       "Play again"
     );
     play("win");
@@ -474,16 +614,35 @@
   function _musicSchedule() {
     if (!state.audio) return;
     const audioCtx = state.audio.ctx;
+    const useBoss = state.level && state.level.isBossArena;
     const weather = state.level?.theme.weather || "pollen";
-    const theme = MUSIC_THEMES[weather] || MUSIC_THEMES.pollen;
+    const theme = useBoss ? MUSIC_THEMES.boss : (MUSIC_THEMES[weather] || MUSIC_THEMES.pollen);
     const beatDur = 60 / theme.bpm / 2;
     while (_musicNextTime < audioCtx.currentTime + 0.16) {
       const idx = _musicNoteIdx % theme.melody.length;
-      _playMusicNote(NOTE_FREQS[theme.melody[idx]], beatDur * 0.8, _musicNextTime, "square", 0.14);
-      _playMusicNote(NOTE_FREQS[theme.bass[idx]], beatDur * 1.5, _musicNextTime, "triangle", 0.1);
+      _playMusicNote(NOTE_FREQS[theme.melody[idx]], beatDur * 0.8, _musicNextTime, "square", useBoss ? 0.18 : 0.14);
+      _playMusicNote(NOTE_FREQS[theme.bass[idx]], beatDur * 1.5, _musicNextTime, "triangle", useBoss ? 0.14 : 0.1);
+      if (theme.drums && theme.drums[idx]) _playDrum(_musicNextTime, useBoss ? 0.18 : 0.12);
       _musicNextTime += beatDur;
       _musicNoteIdx++;
     }
+  }
+
+  function _playDrum(time, vol) {
+    if (!state.audio) return;
+    const audioCtx = state.audio.ctx;
+    const osc = audioCtx.createOscillator();
+    const amp = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(160, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.13);
+    amp.gain.setValueAtTime(0.0001, time);
+    amp.gain.linearRampToValueAtTime(vol, time + 0.005);
+    amp.gain.exponentialRampToValueAtTime(0.0001, time + 0.14);
+    osc.connect(amp);
+    amp.connect(state.audio.gain);
+    osc.start(time);
+    osc.stop(time + 0.16);
   }
 
   function _playMusicNote(freq, duration, time, type, vol) {
@@ -519,14 +678,23 @@
     updateGizmos(level, dt);
     updatePlayer(player, level, dt);
     updateEnemies(level, dt);
+    updateTurrets(level, dt);
+    updateBoss(level, dt);
+    updateFireballs(level, dt);
+    updateEnemyProjectiles(level, dt);
     updatePickups(level, dt);
     updateParticles(dt);
     updateFloaters(dt);
+    updateCombo(dt);
+    updateAchievementToasts(dt);
     updateCamera(dt);
+    if (state.flash > 0) state.flash = Math.max(0, state.flash - dt * 2.4);
+    if (state.transition > 0) state.transition = Math.max(0, state.transition - dt);
     updateHud();
     if (state.shake > 0) state.shake -= dt;
     state.input.jumpPressed = false;
     state.input.dashPressed = false;
+    state.input.firePressed = false;
   }
 
   function updateToast(dt) {
@@ -542,6 +710,7 @@
     state.input.right = keys.has("arrowright") || keys.has("d") || state.touch.right;
     state.input.jump = keys.has("arrowup") || keys.has("w") || keys.has(" ") || state.touch.jump;
     state.input.dash = keys.has("shift") || keys.has("k") || state.touch.dash;
+    state.input.fire = keys.has("f") || keys.has("j") || state.touch.fire;
   }
 
   function updateFlow(dt) {
@@ -564,7 +733,7 @@
     state.flow = clamp(state.flow + amount, 0, 100);
     state.flowTimer = Math.max(state.flowTimer, 3.6);
     if (label) spawnFloater(x, y, label, color);
-    if (state.flow >= 85) spawnBurst(x, y, "#ffc93c", 5, 120);
+    if (state.flow >= 85) { spawnBurst(x, y, "#ffc93c", 5, 120); unlockAchievement("flow_max"); }
   }
 
   function updatePlayer(player, level, dt) {
@@ -593,6 +762,17 @@
       player.vx *= player.onGround ? FRICTION : AIR_FRICTION;
       if (Math.abs(player.vx) < 5) player.vx = 0;
     }
+    if (player.fireCooldown > 0) player.fireCooldown -= dt;
+    if (player.shieldPulse > 0) player.shieldPulse -= dt;
+    if (player.hasFire && state.input.firePressed && player.fireCooldown <= 0) {
+      player.fireCooldown = 0.28;
+      const fx = player.x + player.w / 2 + player.facing * 16;
+      const fy = player.y + player.h / 2 - 2;
+      state.fireballs.push(makeFireball(fx, fy, player.facing));
+      spawnBurst(fx, fy, "#ff8a47", 8, 160);
+      play("dash");
+    }
+
     if (player.canDash && state.input.dashPressed && player.dashCooldown <= 0 && player.dashReady) {
       player.dashReady = false;
       player.dashCooldown = 0.52;
@@ -639,6 +819,8 @@
         player.doubleReady = player.canDouble;
         player.dashReady = player.canDash;
         spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#b8e0ff", 14, 200);
+        state.wallJumpTotal += 1;
+        if (state.wallJumpTotal >= 10) unlockAchievement("wall_master");
         play("jump");
       }
     }
@@ -802,6 +984,296 @@
     }
   }
 
+  function updateFireballs(level, dt) {
+    for (const fb of state.fireballs) {
+      if (!fb.alive) continue;
+      fb.t += dt;
+      fb.vy += GRAVITY * 0.55 * dt;
+      fb.life -= dt;
+      const prevX = fb.x;
+      const prevY = fb.y;
+      fb.x += fb.vx * dt;
+      fb.y += fb.vy * dt;
+      if (fb.life <= 0) { fb.alive = false; spawnBurst(fb.x, fb.y, "#ff8a47", 6, 120); continue; }
+      if (Math.random() < 0.7) spawnParticle(fb.x, fb.y, Math.random() < 0.5 ? "#ffc93c" : "#ff8a47", 2 + Math.random() * 3, -fb.vx * 0.25, -60 - Math.random() * 60, 0.32);
+      const tx = Math.floor(fb.x / TILE);
+      const ty = Math.floor(fb.y / TILE);
+      if (level.isSolid(tx, ty)) {
+        if (fb.vy > 0 && prevY + fb.h <= ty * TILE) {
+          fb.vy = -340;
+          fb.bounces -= 1;
+          if (fb.bounces < 0) fb.alive = false;
+        } else {
+          fb.alive = false;
+        }
+        spawnBurst(fb.x, fb.y, "#ff8a47", 8, 140);
+        continue;
+      }
+      if (level.isHazard(tx, ty)) { fb.alive = false; continue; }
+      for (const enemy of level.entities) {
+        if (!enemy.alive || !rectsOverlap(fb, enemy)) continue;
+        enemy.alive = false;
+        fb.alive = false;
+        addScore(250);
+        addFlow(10, "SCORCH", enemy.x + enemy.w / 2, enemy.y, "#ff8a47");
+        spawnBurst(enemy.x + enemy.w / 2, enemy.y + enemy.h / 2, "#ff8a47", 20, 240);
+        unlockAchievement("fireball_kill");
+        play("stomp");
+        break;
+      }
+      if (fb.alive) {
+        for (const turret of level.turrets) {
+          if (!turret.alive || !rectsOverlap(fb, turret)) continue;
+          turret.hp -= 1;
+          fb.alive = false;
+          spawnBurst(turret.x + turret.w / 2, turret.y + turret.h / 2, "#ff8a47", 16, 200);
+          if (turret.hp <= 0) {
+            turret.alive = false;
+            addScore(300);
+            spawnBurst(turret.x + turret.w / 2, turret.y + turret.h / 2, "#ffc93c", 28, 280);
+            unlockAchievement("fireball_kill");
+            play("stomp");
+          } else {
+            play("block");
+          }
+          break;
+        }
+      }
+      if (fb.alive && level.boss && level.boss.alive && rectsOverlap(fb, level.boss)) {
+        hitBoss(level.boss, 1, fb.x, fb.y, "fire");
+        fb.alive = false;
+      }
+    }
+    state.fireballs = state.fireballs.filter((f) => f.alive);
+  }
+
+  function updateTurrets(level, dt) {
+    const player = state.player;
+    for (const turret of level.turrets) {
+      if (!turret.alive) continue;
+      turret.pulse += dt;
+      turret.cooldown -= dt;
+      if (turret.cooldown <= 0) {
+        const px = player.x + player.w / 2;
+        const py = player.y + player.h / 2;
+        const dx = px - (turret.x + turret.w / 2);
+        const dy = py - (turret.y + turret.h / 2);
+        const dist = Math.hypot(dx, dy) || 1;
+        if (dist < 620) {
+          const speed = 260;
+          state.enemyProjectiles.push(makeEnemyBullet(
+            turret.x + turret.w / 2,
+            turret.y + turret.h / 2,
+            (dx / dist) * speed,
+            (dy / dist) * speed,
+            "bolt"
+          ));
+          spawnBurst(turret.x + turret.w / 2, turret.y, "#f05d4f", 6, 120);
+          play("block");
+          turret.cooldown = 2 + Math.random() * 1.2;
+        } else {
+          turret.cooldown = 0.6;
+        }
+      }
+      if (rectsOverlap(player, turret) && player.vy > 60 && player.y + player.h - turret.y < 24) {
+        turret.hp -= 2;
+        player.vy = -440;
+        spawnBurst(turret.x + turret.w / 2, turret.y, "#ffc93c", 16, 200);
+        if (turret.hp <= 0) {
+          turret.alive = false;
+          addScore(300);
+          addFlow(10, "STOMP", turret.x + turret.w / 2, turret.y, "#ffc93c");
+          play("stomp");
+        }
+      } else if (rectsOverlap(player, turret) && player.dashTimer > 0) {
+        turret.alive = false;
+        addScore(350);
+        addFlow(14, "DASH HIT", turret.x + turret.w / 2, turret.y, "#ff8a47");
+        spawnBurst(turret.x + turret.w / 2, turret.y, "#ff8a47", 20, 220);
+        play("stomp");
+      }
+    }
+  }
+
+  function updateEnemyProjectiles(level, dt) {
+    const player = state.player;
+    for (const bullet of state.enemyProjectiles) {
+      if (!bullet.alive) continue;
+      bullet.t += dt;
+      bullet.life -= dt;
+      bullet.x += bullet.vx * dt;
+      bullet.y += bullet.vy * dt;
+      if (bullet.life <= 0) { bullet.alive = false; continue; }
+      const tx = Math.floor(bullet.x / TILE);
+      const ty = Math.floor(bullet.y / TILE);
+      if (level.isSolid(tx, ty)) { bullet.alive = false; spawnBurst(bullet.x, bullet.y, "#f05d4f", 5, 100); continue; }
+      if (Math.random() < 0.4) spawnParticle(bullet.x, bullet.y, "#f05d4f", 2, -bullet.vx * 0.1, -bullet.vy * 0.1, 0.24);
+      if (rectsOverlap(bullet, player) && player.starTimer <= 0) {
+        bullet.alive = false;
+        hurtPlayer("bullet");
+      }
+      for (const fb of state.fireballs) {
+        if (fb.alive && rectsOverlap(fb, bullet)) {
+          bullet.alive = false;
+          fb.alive = false;
+          spawnBurst(bullet.x, bullet.y, "#ffc93c", 10, 180);
+        }
+      }
+    }
+    state.enemyProjectiles = state.enemyProjectiles.filter((b) => b.alive);
+  }
+
+  function updateBoss(level, dt) {
+    const boss = level.boss;
+    if (!boss || !boss.alive) return;
+    const player = state.player;
+    boss.phaseTime += dt;
+    boss.attackTimer -= dt;
+    if (boss.hurtFlash > 0) boss.hurtFlash -= dt;
+    boss.shakeOffset = boss.hurtFlash > 0 ? (Math.random() - 0.5) * 8 : 0;
+
+    if (boss.phase === "intro") {
+      if (boss.phaseTime > 1.6) { boss.phase = "patrol"; boss.phaseTime = 0; boss.attackTimer = 2; }
+    } else if (boss.phase === "patrol") {
+      boss.facing = Math.sign((player.x + player.w / 2) - (boss.x + boss.w / 2)) || -1;
+      boss.vx += boss.facing * 220 * dt;
+      boss.vx = clamp(boss.vx, -120, 120);
+      boss.vy += GRAVITY * dt;
+      moveActor(boss, level, dt, false);
+      if (boss.attackTimer <= 0) {
+        const choice = Math.floor(Math.random() * 3);
+        boss.phase = choice === 0 ? "leap" : choice === 1 ? "breathe" : "shockwave";
+        boss.phaseTime = 0;
+        boss.attackTimer = 3 + Math.random() * 1.5;
+      }
+    } else if (boss.phase === "leap") {
+      if (boss.phaseTime < 0.45) {
+        boss.vx *= 0.86;
+      } else if (boss.phaseTime < 0.55) {
+        if (boss.onGround) {
+          boss.vy = -840;
+          boss.vx = boss.facing * 420;
+          boss.onGround = false;
+        }
+      }
+      boss.vy += GRAVITY * dt;
+      moveActor(boss, level, dt, false);
+      if (boss.onGround && boss.phaseTime > 0.6) {
+        shake(0.2, 10);
+        spawnBurst(boss.x + boss.w / 2, boss.y + boss.h, "#ff8a47", 28, 320);
+        for (let i = -2; i <= 2; i += 1) {
+          if (i === 0) continue;
+          state.enemyProjectiles.push(makeEnemyBullet(
+            boss.x + boss.w / 2, boss.y + boss.h - 6,
+            i * 140, -220 - Math.abs(i) * 30, "spark"
+          ));
+        }
+        play("bounce");
+        boss.phase = "patrol";
+        boss.phaseTime = 0;
+      }
+    } else if (boss.phase === "breathe") {
+      boss.vx *= 0.88;
+      boss.vy += GRAVITY * dt;
+      moveActor(boss, level, dt, false);
+      if (boss.phaseTime > 0.3 && boss.phaseTime < 1.2) {
+        if (Math.random() < 0.5) {
+          const aim = Math.atan2(
+            (player.y + player.h / 2) - (boss.y + boss.h / 2),
+            (player.x + player.w / 2) - (boss.x + boss.w / 2)
+          );
+          state.enemyProjectiles.push(makeEnemyBullet(
+            boss.x + boss.w / 2 + boss.facing * 40,
+            boss.y + 28,
+            Math.cos(aim) * 260,
+            Math.sin(aim) * 260,
+            "fire"
+          ));
+        }
+      }
+      if (boss.phaseTime > 1.4) { boss.phase = "patrol"; boss.phaseTime = 0; }
+    } else if (boss.phase === "shockwave") {
+      boss.vx *= 0.9;
+      boss.vy += GRAVITY * dt;
+      moveActor(boss, level, dt, false);
+      if (boss.phaseTime > 0.5 && boss.phaseTime < 0.6) {
+        shake(0.18, 8);
+        for (let i = 0; i < 8; i += 1) {
+          const angle = (Math.PI * 2 * i) / 8;
+          state.enemyProjectiles.push(makeEnemyBullet(
+            boss.x + boss.w / 2,
+            boss.y + boss.h / 2,
+            Math.cos(angle) * 240,
+            Math.sin(angle) * 240 - 60,
+            "spark"
+          ));
+        }
+        play("hurt");
+      }
+      if (boss.phaseTime > 1.1) { boss.phase = "patrol"; boss.phaseTime = 0; }
+    } else if (boss.phase === "dying") {
+      boss.vy += GRAVITY * 0.4 * dt;
+      boss.x += boss.vx * dt;
+      boss.y += boss.vy * dt;
+      if (Math.random() < 0.7) {
+        spawnParticle(
+          boss.x + Math.random() * boss.w,
+          boss.y + Math.random() * boss.h,
+          Math.random() < 0.5 ? "#ffc93c" : "#ff8a47",
+          4 + Math.random() * 4,
+          (Math.random() - 0.5) * 160,
+          -120 - Math.random() * 160,
+          0.8
+        );
+      }
+      if (boss.phaseTime > 2.2) {
+        boss.alive = false;
+        state.flash = 1.1;
+        shake(0.6, 16);
+        spawnBurst(boss.x + boss.w / 2, boss.y + boss.h / 2, "#ffc93c", 80, 600);
+        unlockAchievement("boss_slain");
+        showToast("The Core Dragon falls. Legend.", 2600);
+        addScore(5000);
+        setTimeout(() => { if (state.mode === "playing") finishGame(); }, 2200);
+      }
+    }
+
+    // Boss vs player contact
+    if (rectsOverlap(player, boss) && boss.phase !== "dying") {
+      const stomping = player.vy > 40 && player.y + player.h - boss.y < 36;
+      if (stomping) {
+        hitBoss(boss, 1, player.x + player.w / 2, player.y + player.h, "stomp");
+        player.vy = -620;
+      } else if (player.dashTimer > 0) {
+        hitBoss(boss, 1, player.x + player.w / 2, player.y + player.h / 2, "dash");
+        player.vx = -player.facing * 260;
+      } else if (player.starTimer > 0) {
+        hitBoss(boss, 2, player.x + player.w / 2, player.y + player.h / 2, "star");
+      } else {
+        hurtPlayer("boss");
+      }
+    }
+  }
+
+  function hitBoss(boss, dmg, hx, hy, kind) {
+    if (boss.phase === "dying" || boss.hurtFlash > 0.1) return;
+    boss.hp -= dmg;
+    boss.hurtFlash = 0.4;
+    state.slowMo = 0.22;
+    state.flash = 0.4;
+    shake(0.18, 8);
+    spawnBurst(hx, hy, "#ffc93c", 26, 280);
+    addScore(500 * dmg);
+    addFlow(10, kind === "star" ? "STAR SMASH" : "HIT!", hx, hy, "#ffc93c");
+    play("stomp");
+    if (boss.hp <= 0) {
+      boss.phase = "dying";
+      boss.phaseTime = 0;
+      boss.vx = 0;
+      boss.vy = -420;
+    }
+  }
+
   function updatePickups(level, dt) {
     const player = state.player;
     for (const group of [level.coins, level.gems, level.powerups]) {
@@ -845,9 +1317,27 @@
     const cy = item.y + item.h / 2;
     if (item.kind === "coin") {
       state.coins += 1;
-      addScore(100);
+      state.totalCoinsLifetime += 1;
+      save.totalCoins = state.totalCoinsLifetime;
+      state.coinChain += 1;
+      state.coinChainTimer = 1.8;
+      const chainBonus = Math.min(state.coinChain * 20, 400);
+      addScore(100 + chainBonus);
+      if (state.coinChain >= 3) {
+        spawnFloater(cx, cy - 12, `x${state.coinChain}`, "#ffc93c");
+      }
+      if (state.coins > 0 && state.coins % 100 === 0) {
+        state.lives = Math.min(9, state.lives + 1);
+        showToast("1-UP! Extra life.", 1400);
+        spawnBurst(cx, cy, "#3bb273", 32, 320);
+        play("power");
+      }
       if (!state.player.onGround || state.flowTimer > 0) addFlow(2, null, cx, cy);
       spawnBurst(cx, cy, "#ffc93c", 9, 150);
+      unlockAchievement("first_coin");
+      if (state.totalCoinsLifetime >= 100) unlockAchievement("hundred_coins");
+      if (state.totalCoinsLifetime >= 500) unlockAchievement("five_hundred_coins");
+      persist();
       play("coin");
     } else if (item.kind === "gem") {
       state.gems += 1;
@@ -855,6 +1345,8 @@
       addFlow(22, "SKY GEM", cx, cy, "#7bdff2");
       spawnBurst(cx, cy, "#7bdff2", 20, 220);
       showToast(`Sky gem ${state.gems}/${state.totalGems}`, 1300);
+      unlockAchievement("first_gem");
+      if (state.gems === state.totalGems && state.totalGems > 0) unlockAchievement("all_gems");
       play("gem");
     } else if (item.kind === "dash") {
       state.player.canDash = true;
@@ -893,7 +1385,50 @@
       shake(0.14, 7);
       showToast("Star power! Invincible - crash through anything!", 2200);
       play("power");
+    } else if (item.kind === "fireflower") {
+      state.player.hasFire = true;
+      state.player.fireCooldown = 0;
+      addScore(500);
+      addFlow(14, "FIRE FLOWER", cx, cy, "#ff8a47");
+      spawnBurst(cx, cy, "#ff8a47", 28, 280);
+      showToast("Fire flower! Press F or J to throw fireballs.", 2400);
+      play("power");
+    } else if (item.kind === "shield") {
+      state.player.hasShield = true;
+      addScore(400);
+      addFlow(10, "SHIELD", cx, cy, "#7bdff2");
+      spawnBurst(cx, cy, "#7bdff2", 28, 260);
+      showToast("Bubble shield. Absorbs one hit.", 2000);
+      play("power");
     }
+  }
+
+  function updateCombo(dt) {
+    if (state.comboTimer > 0) {
+      state.comboTimer -= dt;
+      if (state.comboTimer <= 0) { state.comboChain = 0; state.combo = 0; }
+    }
+    if (state.coinChainTimer > 0) {
+      state.coinChainTimer -= dt;
+      if (state.coinChainTimer <= 0) state.coinChain = 0;
+    }
+    if (state.slowMo > 0) state.slowMo -= dt;
+  }
+
+  function unlockAchievement(id) {
+    if (save.achievements[id]) return;
+    save.achievements[id] = Date.now();
+    persist();
+    const def = achievementIndex.get(id);
+    if (def) {
+      state.achievementToasts.push({ name: def.name, desc: def.desc, life: 4 });
+      play("gem");
+    }
+  }
+
+  function updateAchievementToasts(dt) {
+    for (const toast of state.achievementToasts) toast.life -= dt;
+    state.achievementToasts = state.achievementToasts.filter((t) => t.life > 0);
   }
 
   function moveActor(actor, level, dt, isPlayer) {
@@ -1008,6 +1543,9 @@
         player.vy = -500;
         player.onGround = false;
         state.combo += 1;
+        state.comboChain = Math.max(state.comboChain, state.combo);
+        state.comboTimer = 2.4;
+        if (state.combo >= 5) unlockAchievement("combo5");
         const bonus = 200 * state.combo;
         addScore(bonus);
         addFlow(18, `STOMP x${state.combo}`, enemy.x + enemy.w / 2, enemy.y, "#ffc93c");
@@ -1035,21 +1573,62 @@
 
   function checkGate(player, level) {
     const gate = level.gate;
-    if (!gate || !rectsOverlap(player, gate)) return;
+    if (level.isBossArena || !gate || !rectsOverlap(player, gate)) return;
     state.mode = "levelClear";
-    addScore(state.gems * 1000 + Math.max(0, 600 - Math.floor(state.elapsed)) * 3);
+    const timeBonus = Math.max(0, 600 - Math.floor(state.elapsed)) * 3;
+    addScore(state.gems * 1000 + timeBonus);
     spawnBurst(gate.x + gate.w / 2, gate.y + gate.h / 2, "#7bdff2", 48, 340);
     play("gate");
     shake(0.25, 8);
+    recordLevelStat(state.levelIndex, {
+      cleared: true,
+      bestTime: state.elapsed,
+      bestScore: state.score,
+      bestGems: state.gems,
+      noHit: !state.hitThisLevel
+    });
+    if (!state.hitThisLevel) unlockAchievement("no_hit_level");
+    if (state.elapsed < 45) unlockAchievement("speedrun");
+    save.unlocked = Math.max(save.unlocked, state.levelIndex + 2);
+    persist();
     const missing = state.totalGems - state.gems;
     const gemNote = missing > 0 ? `${missing} sky gem${missing === 1 ? "" : "s"} left behind.` : "All sky gems found.";
-    showOverlay(`${level.name} cleared`, `${gemNote} Coins: ${state.coins}. Score: ${state.score.toLocaleString()}.`, state.levelIndex >= levelDefs.length - 1 ? "Finish run" : "Next world");
+    const isFinal = state.levelIndex >= levelDefs.length - 1;
+    showOverlay(`${level.name} cleared`, `${gemNote} Coins: ${state.coins}. Score: ${state.score.toLocaleString()}.`, isFinal ? "Finish run" : "Next world");
+  }
+
+  function recordLevelStat(idx, patch) {
+    const prev = save.levels[idx] || {};
+    const merged = { ...prev };
+    if (patch.cleared) merged.cleared = true;
+    if (patch.noHit) merged.noHit = true;
+    if (patch.bestTime !== undefined && (!merged.bestTime || patch.bestTime < merged.bestTime)) merged.bestTime = patch.bestTime;
+    if (patch.bestScore !== undefined && (!merged.bestScore || patch.bestScore > merged.bestScore)) merged.bestScore = patch.bestScore;
+    if (patch.bestGems !== undefined && (!merged.bestGems || patch.bestGems > merged.bestGems)) merged.bestGems = patch.bestGems;
+    save.levels[idx] = merged;
+    persist();
   }
 
   function hurtPlayer(reason) {
     const player = state.player;
     if (player.invuln > 0 && reason !== "fall") return;
+    if (player.hasShield && reason !== "fall") {
+      player.hasShield = false;
+      player.invuln = 1.2;
+      player.shieldPulse = 0.5;
+      player.vx = -player.facing * 260;
+      player.vy = -320;
+      spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#7bdff2", 32, 300);
+      shake(0.18, 7);
+      play("ring");
+      showToast("Shield absorbed the hit!", 1100);
+      unlockAchievement("shield_save");
+      return;
+    }
+    state.hitThisLevel = true;
     state.combo = 0;
+    state.comboChain = 0;
+    state.coinChain = 0;
     state.flow = Math.max(0, state.flow - (state.assistMode ? 16 : 30));
     state.flowTimer = 0;
     const heartLoss = state.assistMode && reason === "fall" ? 0 : 1;
@@ -1061,7 +1640,16 @@
     shake(0.25, 9);
     spawnBurst(player.x + player.w / 2, player.y + player.h / 2, "#f05d4f", 18, 220);
     play("hurt");
-    if (state.hearts <= 0) gameOver();
+    if (state.hearts <= 0) {
+      if (state.lives > 1) {
+        state.lives -= 1;
+        state.hearts = state.assistMode ? 5 : 3;
+        showToast(`Life lost. ${state.lives} left.`, 1400);
+        respawn();
+      } else {
+        gameOver();
+      }
+    }
     else if (reason === "fall") respawn();
     else showToast(state.assistMode ? "Assist softened that hit. Keep moving." : "Ouch. Find a heart or keep moving.", 1200);
   }
@@ -1241,13 +1829,302 @@
     ctx.translate(Math.round(-state.camera.x + shakeX), Math.round(-state.camera.y + shakeY));
     drawLevel(level);
     drawPlatforms(level);
+    drawTurrets(level);
     drawPickups(level);
     drawEnemies(level);
+    drawEnemyProjectiles();
+    drawFireballs();
+    drawBoss(level);
     drawPlayer(state.player || makePlayer(level.spawn.x, level.spawn.y));
     drawParticles();
     drawFloaters();
     ctx.restore();
     drawWeather(theme, width, height);
+    drawVignette(width, height);
+    if (state.flash > 0) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, state.flash);
+      ctx.fillStyle = "#fff8ef";
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+    if (state.transition > 0) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, state.transition / 0.7);
+      ctx.fillStyle = "#0a0a0a";
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+    }
+    drawHudOverlay(width, height);
+    drawMinimap(level, width, height);
+    drawAchievementToasts(width, height);
+    drawBossHp(level, width, height);
+    drawCoinChain(width, height);
+  }
+
+  function drawVignette(width, height) {
+    const grad = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.35, width / 2, height / 2, Math.max(width, height) * 0.75);
+    grad.addColorStop(0, "rgba(0,0,0,0)");
+    grad.addColorStop(1, "rgba(0,0,0,0.42)");
+    ctx.save();
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+
+  function drawHudOverlay(width, height) {
+    if (state.mode !== "playing") return;
+    ctx.save();
+    ctx.fillStyle = "rgba(24,24,24,0.55)";
+    ctx.fillRect(14, height - 50, 132, 36);
+    ctx.strokeStyle = "#181818";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(14, height - 50, 132, 36);
+    ctx.fillStyle = "#ff8a47";
+    ctx.font = "900 16px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`LIVES x${state.lives}`, 22, height - 32);
+    if (state.player && state.player.hasFire) {
+      ctx.fillStyle = "#ffc93c";
+      ctx.fillText("FIRE", 92, height - 32);
+    }
+    if (state.player && state.player.hasShield) {
+      ctx.fillStyle = "#7bdff2";
+      ctx.fillText("•", 128, height - 32);
+    }
+    ctx.restore();
+  }
+
+  function drawMinimap(level, width, height) {
+    if (!level || state.mode !== "playing") return;
+    const mapW = 180;
+    const mapH = 60;
+    const mx = width - mapW - 14;
+    const my = height - mapH - 14;
+    ctx.save();
+    ctx.fillStyle = "rgba(24,24,24,0.6)";
+    ctx.fillRect(mx, my, mapW, mapH);
+    ctx.strokeStyle = "#181818";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(mx, my, mapW, mapH);
+    const sx = mapW / level.width;
+    const sy = mapH / level.height;
+    ctx.fillStyle = "rgba(255,248,239,0.3)";
+    for (let y = 0; y < level.height; y += 1) {
+      for (let x = 0; x < level.width; x += 1) {
+        const t = level.tiles[y][x];
+        if (t === "#" || t === "B" || t === "?" || t === "U") ctx.fillRect(mx + x * sx, my + y * sy, Math.max(1, sx), Math.max(1, sy));
+      }
+    }
+    if (level.gate) {
+      ctx.fillStyle = "#7bdff2";
+      ctx.fillRect(mx + (level.gate.x / TILE) * sx - 1, my + (level.gate.y / TILE) * sy - 1, 4, 4);
+    }
+    if (level.boss && level.boss.alive) {
+      ctx.fillStyle = "#f05d4f";
+      ctx.fillRect(mx + (level.boss.x / TILE) * sx - 2, my + (level.boss.y / TILE) * sy - 2, 5, 5);
+    }
+    if (state.player) {
+      ctx.fillStyle = "#ffc93c";
+      ctx.fillRect(mx + (state.player.x / TILE) * sx - 2, my + (state.player.y / TILE) * sy - 2, 4, 4);
+    }
+    ctx.restore();
+  }
+
+  function drawAchievementToasts(width, height) {
+    if (!state.achievementToasts.length) return;
+    ctx.save();
+    let yy = height - 110;
+    ctx.font = "900 15px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textBaseline = "top";
+    for (const t of state.achievementToasts) {
+      const alpha = Math.min(1, t.life / 4) * Math.min(1, (4 - t.life) / 0.3);
+      ctx.globalAlpha = Math.max(0.1, alpha);
+      ctx.fillStyle = "rgba(24,24,24,0.85)";
+      ctx.fillRect(width / 2 - 170, yy, 340, 48);
+      ctx.strokeStyle = "#ffc93c";
+      ctx.lineWidth = 3;
+      ctx.strokeRect(width / 2 - 170, yy, 340, 48);
+      ctx.fillStyle = "#ffc93c";
+      ctx.fillText("★ " + t.name, width / 2 - 160, yy + 6);
+      ctx.fillStyle = "#fff8ef";
+      ctx.font = "700 12px Trebuchet MS, Segoe UI, sans-serif";
+      ctx.fillText(t.desc, width / 2 - 160, yy + 26);
+      ctx.font = "900 15px Trebuchet MS, Segoe UI, sans-serif";
+      yy -= 54;
+    }
+    ctx.restore();
+  }
+
+  function drawBossHp(level, width, height) {
+    const boss = level && level.boss;
+    if (!boss || !boss.alive || boss.phase === "intro") return;
+    const w = Math.min(520, width - 60);
+    const x = width / 2 - w / 2;
+    const y = 90;
+    ctx.save();
+    ctx.fillStyle = "rgba(24,24,24,0.75)";
+    ctx.fillRect(x - 4, y - 4, w + 8, 28);
+    ctx.strokeStyle = "#181818";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x - 4, y - 4, w + 8, 28);
+    ctx.fillStyle = "#3a0800";
+    ctx.fillRect(x, y, w, 20);
+    const ratio = Math.max(0, boss.hp / boss.maxHp);
+    const grad = ctx.createLinearGradient(x, y, x + w, y);
+    grad.addColorStop(0, "#ffc93c");
+    grad.addColorStop(0.5, "#ff8a47");
+    grad.addColorStop(1, "#f05d4f");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w * ratio, 20);
+    ctx.fillStyle = "#fff8ef";
+    ctx.font = "900 14px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("THE CORE DRAGON", width / 2, y + 10);
+    ctx.restore();
+  }
+
+  function drawCoinChain(width, height) {
+    if (state.coinChain < 3) return;
+    ctx.save();
+    ctx.font = "900 18px Trebuchet MS, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffc93c";
+    ctx.strokeStyle = "#181818";
+    ctx.lineWidth = 4;
+    ctx.strokeText(`COIN CHAIN x${state.coinChain}`, width / 2, 60);
+    ctx.fillText(`COIN CHAIN x${state.coinChain}`, width / 2, 60);
+    ctx.restore();
+  }
+
+  function drawFireballs() {
+    for (const fb of state.fireballs) {
+      ctx.save();
+      ctx.translate(fb.x, fb.y);
+      ctx.rotate(fb.t * 12);
+      const r = 9 + Math.sin(fb.t * 18) * 1.5;
+      const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, r + 4);
+      grad.addColorStop(0, "#ffc93c");
+      grad.addColorStop(0.6, "#ff8a47");
+      grad.addColorStop(1, "rgba(240,93,79,0)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, r + 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffc93c";
+      ctx.strokeStyle = "#181818";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  function drawEnemyProjectiles() {
+    for (const b of state.enemyProjectiles) {
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      if (b.kind === "fire") {
+        const grad = ctx.createRadialGradient(0, 0, 1, 0, 0, 14);
+        grad.addColorStop(0, "#ffc93c");
+        grad.addColorStop(1, "rgba(240,93,79,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#f05d4f";
+        ctx.strokeStyle = "#181818";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        ctx.rotate(b.t * 10);
+        ctx.fillStyle = "#f05d4f";
+        ctx.strokeStyle = "#181818";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i += 1) {
+          const a = (Math.PI * 2 * i) / 6;
+          const rr = i % 2 === 0 ? 8 : 4;
+          ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  function drawTurrets(level) {
+    for (const turret of level.turrets) {
+      if (!turret.alive) continue;
+      const x = turret.x;
+      const y = turret.y;
+      ctx.save();
+      ctx.fillStyle = "#26313a";
+      ctx.strokeStyle = "#181818";
+      ctx.lineWidth = 3;
+      ctx.fillRect(x + 4, y + 12, turret.w - 8, turret.h - 12);
+      ctx.strokeRect(x + 4, y + 12, turret.w - 8, turret.h - 12);
+      ctx.fillStyle = "#f05d4f";
+      ctx.fillRect(x + 10, y + 4, turret.w - 20, 12);
+      ctx.strokeRect(x + 10, y + 4, turret.w - 20, 12);
+      ctx.fillStyle = turret.cooldown < 0.3 ? "#ffc93c" : "#fff8ef";
+      ctx.beginPath();
+      ctx.arc(x + turret.w / 2, y + 10, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function drawBoss(level) {
+    const boss = level.boss;
+    if (!boss || !boss.alive) return;
+    const bx = boss.x + boss.shakeOffset;
+    const by = boss.y;
+    ctx.save();
+    ctx.translate(bx + boss.w / 2, by + boss.h / 2);
+    ctx.scale(boss.facing, 1);
+    const flashT = boss.hurtFlash > 0 ? 1 : 0;
+    const bodyColor = flashT ? "#fff8ef" : "#8b1a00";
+    ctx.fillStyle = bodyColor;
+    ctx.strokeStyle = "#181818";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(0, 8, boss.w / 2, boss.h / 2 - 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = flashT ? "#fff8ef" : "#e84c00";
+    ctx.beginPath();
+    ctx.ellipse(-boss.w / 2 + 10, -boss.h / 2 + 16, 24, 18, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#ffc93c";
+    ctx.beginPath();
+    ctx.arc(-boss.w / 2 + 18, -boss.h / 2 + 12, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#181818";
+    ctx.beginPath();
+    ctx.arc(-boss.w / 2 + 20, -boss.h / 2 + 12, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffc93c";
+    ctx.beginPath();
+    for (let i = -2; i <= 2; i += 1) {
+      ctx.moveTo(i * 14 + 6, -boss.h / 2 + 8);
+      ctx.lineTo(i * 14 - 2, -boss.h / 2 - 8);
+      ctx.lineTo(i * 14 + 14, -boss.h / 2 - 2);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawBackground(theme, width, height) {
@@ -1540,6 +2417,33 @@
       }
     }
     drawSprite(sprite, -23, -27, 46, 54);
+    if (player.hasShield) {
+      ctx.save();
+      const pulse = 0.35 + Math.sin(state.elapsed * 8) * 0.1;
+      ctx.globalAlpha = pulse;
+      const grad = ctx.createRadialGradient(0, 0, 6, 0, 0, 38);
+      grad.addColorStop(0, "rgba(123,223,242,0)");
+      grad.addColorStop(0.6, "rgba(123,223,242,0.35)");
+      grad.addColorStop(1, "rgba(123,223,242,0.8)");
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 2, 34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#7bdff2";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (player.shieldPulse > 0) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, player.shieldPulse * 2);
+      ctx.strokeStyle = "#7bdff2";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(0, 2, 40 + (1 - player.shieldPulse * 2) * 20, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
     if (player.canDash && player.dashReady) {
       ctx.globalAlpha = 0.5 + Math.sin(state.elapsed * 8) * 0.18;
       ctx.fillStyle = "#ff8a47";
@@ -1668,7 +2572,8 @@
   function loop(time) {
     const rawDt = state.lastTime ? (time - state.lastTime) / 1000 : 0;
     state.lastTime = time;
-    const dt = Math.min(MAX_DT, rawDt);
+    const slow = state.slowMo > 0 ? 0.35 : 1;
+    const dt = Math.min(MAX_DT, rawDt) * slow;
     update(dt);
     render();
     requestAnimationFrame(loop);
@@ -1680,6 +2585,7 @@
     if (!state.keys.has(key)) {
       if (key === " " || key === "arrowup" || key === "w") state.input.jumpPressed = true;
       if (key === "shift" || key === "k") state.input.dashPressed = true;
+      if (key === "f" || key === "j") state.input.firePressed = true;
     }
     state.keys.add(key);
     if (state.mode === "menu" && (key === "enter" || key === " ")) startGame();
@@ -1773,14 +2679,112 @@
 
   overlayButton.addEventListener("click", () => {
     ensureAudio();
-    if (state.mode === "menu" || state.mode === "gameOver" || state.mode === "win") startGame();
+    if (state.mode === "menu" || state.mode === "gameOver" || state.mode === "win") showMainMenu();
     else if (state.mode === "levelClear") nextLevel();
     else if (state.mode === "paused") {
       state.mode = "playing";
       overlay.classList.add("hidden");
       startMusic();
     }
+    else if (state.mode === "levelSelect" || state.mode === "credits") showMainMenu();
   });
+
+  function showMainMenu() {
+    state.mode = "menu";
+    overlayTitle.textContent = "Pip and the Cloudworks";
+    overlayText.innerHTML = "Sprint across five handcrafted worlds. Chain stomps, fireballs, dashes and wall-jumps. Save the Cloudworks. Slay the Core Dragon.";
+    overlayButton.textContent = "Start run";
+    overlay.classList.remove("hidden");
+    renderMenuExtras();
+  }
+
+  function showLevelSelect() {
+    state.mode = "levelSelect";
+    overlayTitle.textContent = "Level Select";
+    overlayText.innerHTML = "Pick any unlocked world. Best times and gems are saved.";
+    overlayButton.textContent = "Back to menu";
+    overlay.classList.remove("hidden");
+    renderLevelCards();
+  }
+
+  function showCredits() {
+    state.mode = "credits";
+    overlayTitle.textContent = "Credits";
+    overlayText.innerHTML = "Engineered with love by Claude + you.<br>Worlds, systems, art, and mayhem crafted live.<br>Music: web-audio synth with drum layer.<br>Fonts: system stack.<br>Thanks for playing.";
+    overlayButton.textContent = "Back to menu";
+    overlay.classList.remove("hidden");
+    const panel = overlay.querySelector(".panel");
+    const extras = panel.querySelector(".menu-extras");
+    if (extras) extras.remove();
+    const stats = document.createElement("div");
+    stats.className = "menu-extras";
+    const unlocked = Object.values(save.achievements || {}).length;
+    stats.innerHTML = `
+      <div class="stat-grid">
+        <div><span>Achievements</span><strong>${unlocked}/${ACHIEVEMENTS.length}</strong></div>
+        <div><span>Lifetime coins</span><strong>${save.totalCoins || 0}</strong></div>
+        <div><span>Runs</span><strong>${save.totalRuns || 0}</strong></div>
+      </div>
+      <div class="achievements-list">${ACHIEVEMENTS.map((a) => {
+        const got = save.achievements && save.achievements[a.id];
+        return `<div class="ach${got ? " got" : ""}"><strong>${got ? "★" : "☆"} ${a.name}</strong><span>${a.desc}</span></div>`;
+      }).join("")}</div>
+    `;
+    panel.insertBefore(stats, overlayButton);
+  }
+
+  function renderMenuExtras() {
+    const panel = overlay.querySelector(".panel");
+    const prev = panel.querySelector(".menu-extras");
+    if (prev) prev.remove();
+    const extras = document.createElement("div");
+    extras.className = "menu-extras";
+    extras.innerHTML = `
+      <div class="menu-buttons">
+        <button type="button" data-menu="level">Level select</button>
+        <button type="button" data-menu="credits">Credits & achievements</button>
+      </div>
+    `;
+    panel.insertBefore(extras, overlayButton);
+    extras.querySelector('[data-menu="level"]').addEventListener("click", showLevelSelect);
+    extras.querySelector('[data-menu="credits"]').addEventListener("click", showCredits);
+  }
+
+  function renderLevelCards() {
+    const panel = overlay.querySelector(".panel");
+    const prev = panel.querySelector(".menu-extras");
+    if (prev) prev.remove();
+    const extras = document.createElement("div");
+    extras.className = "menu-extras";
+    const cards = levelDefs.map((lvl, idx) => {
+      const stat = save.levels[idx] || {};
+      const unlocked = idx < (save.unlocked || 1);
+      const bestTime = stat.bestTime ? formatTime(stat.bestTime) : "--:--";
+      const bestScore = stat.bestScore ? stat.bestScore.toLocaleString() : "--";
+      const gems = stat.bestGems ? `${stat.bestGems}` : "0";
+      const stars = (stat.cleared ? 1 : 0) + (stat.noHit ? 1 : 0) + (stat.bestTime && stat.bestTime < 60 ? 1 : 0);
+      return `
+        <button class="lvl-card${unlocked ? "" : " locked"}" data-lvl="${idx}" ${unlocked ? "" : "disabled"}>
+          <strong>${idx + 1}. ${lvl.name}</strong>
+          <div class="lvl-stats">
+            <span>Best: ${bestTime}</span>
+            <span>Score: ${bestScore}</span>
+            <span>Gems: ${gems}</span>
+            <span>${unlocked ? "★".repeat(stars) + "☆".repeat(Math.max(0, 3 - stars)) : "LOCKED"}</span>
+          </div>
+        </button>
+      `;
+    }).join("");
+    extras.innerHTML = `<div class="level-grid">${cards}</div>`;
+    panel.insertBefore(extras, overlayButton);
+    extras.querySelectorAll(".lvl-card").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const idx = Number(btn.dataset.lvl);
+        overlay.classList.add("hidden");
+        startGame(idx);
+      });
+    });
+  }
 
   window.addEventListener("resize", resize);
   window.addEventListener("keydown", onKeyDown);
@@ -1817,6 +2821,7 @@
     overlay.classList.add("hidden");
   } else {
     initLevel(0);
+    showMainMenu();
   }
   requestAnimationFrame(loop);
 
