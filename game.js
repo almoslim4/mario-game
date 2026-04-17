@@ -367,8 +367,7 @@
       x, y, w: 18, h: 18,
       vx: dir * 620,
       vy: -80,
-      life: 2.4,
-      bounces: 2,
+      life: 15,
       alive: true,
       t: 0
     };
@@ -992,23 +991,37 @@
       fb.life -= dt;
       const prevX = fb.x;
       const prevY = fb.y;
+      // Move X first, resolve horizontal bounces
       fb.x += fb.vx * dt;
+      let txH = Math.floor((fb.vx > 0 ? fb.x + fb.w : fb.x) / TILE);
+      let tyH = Math.floor((fb.y + fb.h / 2) / TILE);
+      if (level.isSolid(txH, tyH)) {
+        if (fb.vx > 0) fb.x = txH * TILE - fb.w - 0.1;
+        else fb.x = (txH + 1) * TILE + 0.1;
+        fb.vx = -fb.vx;
+        spawnBurst(fb.x, fb.y, "#ff8a47", 6, 120);
+      }
+      // Move Y, resolve vertical bounces (floor + ceiling)
       fb.y += fb.vy * dt;
-      if (fb.life <= 0) { fb.alive = false; spawnBurst(fb.x, fb.y, "#ff8a47", 6, 120); continue; }
+      let txV = Math.floor((fb.x + fb.w / 2) / TILE);
+      let tyV = Math.floor((fb.vy > 0 ? fb.y + fb.h : fb.y) / TILE);
+      if (level.isSolid(txV, tyV)) {
+        if (fb.vy > 0) {
+          fb.y = tyV * TILE - fb.h - 0.1;
+          fb.vy = -Math.max(380, Math.abs(fb.vy) * 0.95);
+        } else {
+          fb.y = (tyV + 1) * TILE + 0.1;
+          fb.vy = Math.abs(fb.vy) * 0.6;
+        }
+        spawnBurst(fb.x, fb.y, "#ff8a47", 6, 120);
+      }
+      // Preserve horizontal energy so it keeps travelling
+      if (Math.abs(fb.vx) < 300) fb.vx = Math.sign(fb.vx || 1) * 300;
+      // Safety despawn if it falls out of the world or times out
+      if (fb.life <= 0 || fb.y > level.height * TILE + 200) { fb.alive = false; continue; }
       if (Math.random() < 0.7) spawnParticle(fb.x, fb.y, Math.random() < 0.5 ? "#ffc93c" : "#ff8a47", 2 + Math.random() * 3, -fb.vx * 0.25, -60 - Math.random() * 60, 0.32);
       const tx = Math.floor(fb.x / TILE);
       const ty = Math.floor(fb.y / TILE);
-      if (level.isSolid(tx, ty)) {
-        if (fb.vy > 0 && prevY + fb.h <= ty * TILE) {
-          fb.vy = -340;
-          fb.bounces -= 1;
-          if (fb.bounces < 0) fb.alive = false;
-        } else {
-          fb.alive = false;
-        }
-        spawnBurst(fb.x, fb.y, "#ff8a47", 8, 140);
-        continue;
-      }
       if (level.isHazard(tx, ty)) { fb.alive = false; continue; }
       for (const enemy of level.entities) {
         if (!enemy.alive || !rectsOverlap(fb, enemy)) continue;
